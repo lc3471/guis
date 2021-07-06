@@ -437,10 +437,15 @@ class WidgetGallery(QDialog):
 
     def toggle_VTracking(self):
         if not dry_run:
-            if self.aim2.isVTracking():
-                self.aim2.setIndependent()
-            else:
-                self.aim2.setVTracking()
+            if not self.aim2.isOutputOn(2):
+                if self.aim2.isVTracking():
+                        self.aim2.setIndependent()
+                else:
+                        self.aim2.setVTracking()
+            else: 
+                alert = QMessageBox()
+                alert.setText("You must turn off output 2 before setting or disabling voltage tracking.")
+                alert.exec_()
         else:
             print("Pranked! I didn't actually do it because you wanted a dry run.")
 
