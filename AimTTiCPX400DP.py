@@ -99,9 +99,8 @@ class AimTTiCPX400DP(SCPI):
     def isVTracking(self):
         """return True if Voltage Tracking is on, False if outputs operate
         independently"""
-        _str = 'CONFIG?'.format(self.channel)
-        ret = self._instQuery(_str)
-        if (ret[0]=='1'):
+        ret = self._instQuery('CONFIG?')
+        if (ret[0]=='0'):
             return True
         else:
             return False

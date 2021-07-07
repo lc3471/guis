@@ -207,7 +207,6 @@ class AimTTiEL302P(SCPI):
 
         str = 'I?'
         ret = self._instQuery(str)
-        print(ret)
 
         # Pull out words from response
         match = re.match('I\s(\d*\.\d*)',ret)
