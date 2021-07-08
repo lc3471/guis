@@ -323,9 +323,9 @@ class WidgetGallery(QDialog):
     def toggle_output(self, channel=None):
         if not dry_run:
             if self.Rigol.isOutputOn(channel):
-                self.Rigol.outputOn(channel)
-            else:
                 self.Rigol.outputOff(channel)
+            else:
+                self.Rigol.outputOn(channel)
         else: 
             print("Pranked! dry run :)")
 
