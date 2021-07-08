@@ -110,7 +110,7 @@ class RigolDG5000(SCPI):
         if wait is None:
             wait = self._wait
             
-        str_ = (':OUTP{} ON').format(channel)
+        str_ = (':OUTP{}:STAT ON').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
     
@@ -123,7 +123,7 @@ class RigolDG5000(SCPI):
         if wait is None:
             wait = self._wait
             
-        str_ = (':OUTP{} OFF').format(channel)
+        str_ = (':OUTP{}:STAT OFF').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
 
@@ -162,9 +162,182 @@ class RigolDG5000(SCPI):
 
         return lst
 
+    def dutyCycle(self, pct=None, channel=None, wait=None, Min=False, Max=False):
 
+        if wait is None: 
+            wait=self._wait
 
+        if Min:
+            str_=(":SOUR{}:PULS:DCYC MIN").format(channel)
+        elif Max:
+            str_=(":SOUR{}:PULS:DCYC MAX").format(channel)
+        else:
+            str_=(":SOUR{}:PULS:DCYC {}").format(channel, pct)
+        
+        self._instWrite(str_)
+        sleep(wait)
 
+    def queryDutyCycle(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:DCYC?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+
+        return ret
+
+    def pulseDelay(self, delay=None, channel=None, wait=None, Min=False, Max=False):
+
+        if wait is None:
+            wait=self._wait
+
+        if Min:
+            str_=(":SOUR{}:PULS:DEL MIN").format(channel)
+        elif Max:
+            str_=(":SOUR{}:PULS:DEL MAX").format(channel)
+        else:
+            str_=(":SOUR{}:PULS:DEL {}").format(channel, delay)
+
+        self._instWrite(str_)
+        sleep(wait)
+
+    def queryDelay(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:DEL?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+
+        return ret
+
+    def holdWidth(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+        
+        str_=(":SOUR{}:PULS:HOLD WIDT").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def holdDuty(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:HOLD DUTY").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def isWidth(self, channel=None, wait=None):
+        #if not WIDT, DUTY
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}PULS:HOLD?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        
+        if ret=="WIDT":
+            return True
+        else:
+            return False
+
+    def transitionLeading(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+
+        if wait is None:
+            wait=self._wait
+
+        if Min:
+            str_=(":SOUR{}:PULS:TRAN MIN").format(channel)
+        elif Max:
+            str_=(":SOUR{}:PULS:TRAN MAX").format(channel)
+        else:
+            str_=("SOUR{}:PULS:TRAN {}").format(channel, seconds)
+
+        self._instWrite(str_)
+        sleep(wait)
+
+    def queryTransLead(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:TRAN?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+
+        return ret
+
+    def transitionTrailing(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+
+        if wait is None:
+            wait=self._wait
+
+        if Min:
+            str_=(":SOUR{}:PULS:TRAN:TRA MIN").format(channel)
+        elif Max:
+            str_=(":SOUR{}:PULS:TRAN:TRA MAX").format(channel)
+        else:
+            str_=("SOUR{}:PULS:TRAN:TRA {}").format(channel, seconds)
+
+        self._instWrite(str_)
+        sleep(wait)
+
+    def queryTransTrail(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:TRAN:TRA?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+
+        return ret
+
+    def pulseWidth(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+
+        if wait is None:
+            wait=self._wait
+
+        if Min:
+            str_=(":SOUR{}:PULS:WIDT MIN").format(channel)
+        elif Max:
+            str_=(":SOUR{}:PULS:WIDT MAX").format(channel)
+        else:
+            str_=("SOUR{}:PULS:WIDT {}").format(channel, seconds)
+
+        self._instWrite(str_)
+        sleep(wait)
+
+    def queryWidth(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":SOUR{}:PULS:WIDT?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+
+        return ret
+
+    def setImpedance(self, ohms=None, channel=None, wait=None, inf=False, Min=False, Max=False):
+
+        if wait is None:
+            wait=self._wait
+
+        if inf:
+            str_=(":OUTP{}:IMP INF").format(channel)
+        
 
 if __name__ == '__main__':
     import argparse
