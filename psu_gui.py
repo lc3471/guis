@@ -35,6 +35,9 @@ import functools
 
 from datetime import datetime
 
+from pyvisa.errors import VisaIOError
+from serial.serialutil import SerialException
+
 parser=argparse.ArgumentParser()
 parser.add_argument('--dry_run',
                         type=bool,
@@ -61,19 +64,41 @@ class WidgetGallery(QDialog):
         
         # build a PSUBox
         #### some renaming in this function may be necessary as we build the GUI up to include other elements
+
         try:
             self.createPSU1Box()
-            mainLayout.addWidget(self.PSU1Box,0,0)
-        except:
-            pass
+        except VisaIOError as err:
+            self.PSU1except(err)
+        except SerialException as err:
+            self.PSU1except(err)
+        
         try:
             self.createPSU2Box()
-            mainLayout.addWidget(self.PSU2Box,0,1)
-        except:
-            pass
+        except VisaIOError as err:
+            self.PSU2except(err)
+        except SerialException as err: 
+            self.PSU2except(err)
 
         # set the layout of the widget gallery to mainLayout
         self.setLayout(mainLayout)
+
+        mainLayout.addWidget(self.PSU1Box,0,0)
+        mainLayout.addWidget(self.PSU2Box,0,1)
+
+    def PSU1except(self, err=None):
+        self.PSU1Box=QGroupBox("Single PSU")
+        self.exceptLayout1=QVBoxLayout()
+        self.exceptLabel1=QLabel(("PSU not connected: {}").format(err))
+        self.exceptLayout1.addWidget(self.exceptLabel1)
+        self.PSU1Box.setLayout(self.exceptLayout1)
+
+    def PSU2except(self, err=None):
+        self.PSU2Box=QGroupBox("Double PSU")
+        self.exceptLayout2=QVBoxLayout()
+        self.exceptLabel2=QLabel(("PSU not connected: {}").format(err))
+        self.exceptLayout2.addWidget(self.exceptLabel2)
+        self.PSU2Box.setLayout(self.exceptLayout2)
+
 
     def createPSU1Box(self):
         

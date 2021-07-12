@@ -73,20 +73,6 @@ class RigolDG5000(SCPI):
                 write_termination='\r\n')
         self.open()
 
-    def beeperOn(self):
-        """Enable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
-        
-    def beeperOff(self):
-        """Disable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
-        
     def isOutputOn(self, channel=None):
         """Return true if the output of channel is ON, else false
         """
@@ -110,7 +96,7 @@ class RigolDG5000(SCPI):
         if wait is None:
             wait = self._wait
             
-        str_ = (':OUTP{}:STAT ON').format(channel)
+        str_ = (':OUTP{} ON').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
     
@@ -123,7 +109,7 @@ class RigolDG5000(SCPI):
         if wait is None:
             wait = self._wait
             
-        str_ = (':OUTP{}:STAT OFF').format(channel)
+        str_ = (':OUTP{} OFF').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
 
@@ -142,10 +128,7 @@ class RigolDG5000(SCPI):
         self._instWrite(str_)
         sleep(wait)
     
-    def queryApply(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryApply(self, channel=None):
         
         str_=(":SOUR{}:APPL?").format(channel)
         ret=self._instQuery(str_)
@@ -177,10 +160,7 @@ class RigolDG5000(SCPI):
         self._instWrite(str_)
         sleep(wait)
 
-    def queryDutyCycle(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryDutyCycle(self, channel=None):
 
         str_=(":SOUR{}:PULS:DCYC?").format(channel)
         ret=self._instQuery(str_)
@@ -204,10 +184,7 @@ class RigolDG5000(SCPI):
         self._instWrite(str_)
         sleep(wait)
 
-    def queryDelay(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryDelay(self, channel=None):
 
         str_=(":SOUR{}:PULS:DEL?").format(channel)
         ret=self._instQuery(str_)
@@ -234,17 +211,14 @@ class RigolDG5000(SCPI):
         self._instWrite(str_)
         sleep(wait)
 
-    def isWidth(self, channel=None, wait=None):
+    def isWidth(self, channel=None):
         #if not WIDT, DUTY
 
-        if wait is None:
-            wait=self._wait
-
-        str_=(":SOUR{}PULS:HOLD?").format(channel)
+        str_=(":SOUR{}:PULS:HOLD?").format(channel)
         ret=self._instQuery(str_)
         ret=ret.strip('"')
-        
-        if ret=="WIDT":
+
+        if ret=="WIDT\n":
             return True
         else:
             return False
@@ -259,15 +233,12 @@ class RigolDG5000(SCPI):
         elif Max:
             str_=(":SOUR{}:PULS:TRAN MAX").format(channel)
         else:
-            str_=("SOUR{}:PULS:TRAN {}").format(channel, seconds)
+            str_=(":SOUR{}:PULS:TRAN {}").format(channel, seconds)
 
         self._instWrite(str_)
         sleep(wait)
 
-    def queryTransLead(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryTransLead(self, channel=None):
 
         str_=(":SOUR{}:PULS:TRAN?").format(channel)
         ret=self._instQuery(str_)
@@ -286,15 +257,12 @@ class RigolDG5000(SCPI):
         elif Max:
             str_=(":SOUR{}:PULS:TRAN:TRA MAX").format(channel)
         else:
-            str_=("SOUR{}:PULS:TRAN:TRA {}").format(channel, seconds)
+            str_=(":SOUR{}:PULS:TRAN:TRA {}").format(channel, seconds)
 
         self._instWrite(str_)
         sleep(wait)
 
-    def queryTransTrail(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryTransTrail(self, channel=None):
 
         str_=(":SOUR{}:PULS:TRAN:TRA?").format(channel)
         ret=self._instQuery(str_)
@@ -313,15 +281,12 @@ class RigolDG5000(SCPI):
         elif Max:
             str_=(":SOUR{}:PULS:WIDT MAX").format(channel)
         else:
-            str_=("SOUR{}:PULS:WIDT {}").format(channel, seconds)
+            str_=(":SOUR{}:PULS:WIDT {}").format(channel, seconds)
 
         self._instWrite(str_)
         sleep(wait)
 
-    def queryWidth(self, channel=None, wait=None):
-
-        if wait is None:
-            wait=self._wait
+    def queryWidth(self, channel=None):
 
         str_=(":SOUR{}:PULS:WIDT?").format(channel)
         ret=self._instQuery(str_)
@@ -337,7 +302,112 @@ class RigolDG5000(SCPI):
 
         if inf:
             str_=(":OUTP{}:IMP INF").format(channel)
+        elif Min:
+            str_=(":OUTP{}:IMP MIN").format(channel)
+        elif Max:
+            str_=(":OUTP{}:IMP MAX").format(channel)
+        else:
+            str_=(":OUTP{}:IMP {}").format(channel, ohms)
+
+        self._instWrite(str_)
+        sleep(wait)
         
+    def queryImpedance(self, channel=None):
+        
+        str_=(":OUTP{}:IMP?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        ret=float(ret)
+        return ret
+
+    def polarityNorm(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":OUTP{}:POL NORM").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def polarityInv(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+        
+        str_=(":OUTP{}:POL INV").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def isNorm(self, channel=None):
+        # if not NORM, INV
+
+        str_=(":OUTP{}:POL?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+
+        if ret == "NORMAL\n\n":
+            return True
+        else:
+            return False
+
+    def syncOn(self, channel=None, wait=None):
+        
+        if wait is None:
+            wait=self._wait
+
+        str_=(":OUTP{}:SYNC ON").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def syncOff(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":OUTP{}:SYNC OFF").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def isSyncOn(self, channel=None):
+
+        str_=(":OUTP{}:SYNC?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+
+        if ret=="ON\n":
+            return True
+        else:
+            return False
+
+    def syncPolPos(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":OUTP{}:SYNC:POL POS").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def syncPolNeg(self, channel=None, wait=None):
+
+        if wait is None:
+            wait=self._wait
+
+        str_=(":OUTP{}:SYNC:POL NEG").format(channel)
+        self._instWrite(str_)
+        sleep(wait)
+
+    def isSyncPolPos(self, channel=None):
+        # if not POS, NEG
+
+        str_=(":OUTP{}:SYNC:POL?").format(channel)
+        ret=self._instQuery(str_)
+        ret=ret.strip('"')
+        
+        if ret=="POS\n":
+            return True
+        else: 
+            return False
 
 if __name__ == '__main__':
     import argparse
