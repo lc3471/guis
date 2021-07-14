@@ -140,7 +140,7 @@ class WidgetGallery(QDialog):
         self.PSU1Layout.addWidget(self.Ibox_PSU1,0,1)
 
         self.create_Obox_PSU1()
-        self.PSU1Layout.addWidget(self.Obox_PSU1,1,0)
+        self.PSU1Layout.addWidget(self.Obox_PSU1,1,0,1,2)
 
     def create_Vbox_PSU1(self):
         self.Vbox_PSU1 = QGroupBox("Voltage")
@@ -202,7 +202,7 @@ class WidgetGallery(QDialog):
 
         if self.aim1.isOutputOn():
             self.Odisplay_PSU1.setText("Output is On")
-            self.Odisplay_PSU1.setStyleSheet("background:green")
+            self.Odisplay_PSU1.setStyleSheet("background:limegreen")
         else:
             self.Odisplay_PSU1.setText("Output is Off")
             self.Odisplay_PSU1.setStyleSheet("background:red")
@@ -275,7 +275,7 @@ class WidgetGallery(QDialog):
             self.was_on_PSU1=self.aim1.isOutputOn()
             if self.aim1.isOutputOn():
                 self.Odisplay_PSU1.setText("Output is On")
-                self.Odisplay_PSU1.setStyleSheet("background:green")
+                self.Odisplay_PSU1.setStyleSheet("background:limegreen")
             else:
                 self.Odisplay_PSU1.setText("Output is Off")
                 self.Odisplay_PSU1.setStyleSheet("background:red")
@@ -370,7 +370,7 @@ class WidgetGallery(QDialog):
 
         self.box1layout.addWidget(self.Vbox1,0,0)
         self.box1layout.addWidget(self.Ibox1,0,1)
-        self.box1layout.addWidget(self.Obox1,1,0)
+        self.box1layout.addWidget(self.Obox1,1,0,1,2)
     
     def create_box2(self):
 
@@ -385,7 +385,7 @@ class WidgetGallery(QDialog):
 
         self.box2layout.addWidget(self.Vbox2,0,0)
         self.box2layout.addWidget(self.Ibox2,0,1)
-        self.box2layout.addWidget(self.Obox2,1,0)
+        self.box2layout.addWidget(self.Obox2,1,0,1,2)
     
     def create_controlBox(self):
 
@@ -454,7 +454,7 @@ class WidgetGallery(QDialog):
 
         if self.aim2.isVTracking():
             self.VTdisplay.setText("Voltage Tracking is On")
-            self.VTdisplay.setStyleSheet("background:green")
+            self.VTdisplay.setStyleSheet("background:limegreen")
         else:
             self.VTdisplay.setText("Voltage Tracking is Off")
             self.VTdisplay.setStyleSheet("background:red")
@@ -514,7 +514,7 @@ class WidgetGallery(QDialog):
                 self.VTdisplay.setStyleSheet("background:red")
             else:
                 self.VTdisplay.setText("Voltage Tracking is On")
-                self.VTdisplay.setStyleSheet("background:green")
+                self.VTdisplay.setStyleSheet("background:limegreen")
         
 
     def create_Vbox1(self):
@@ -621,7 +621,7 @@ class WidgetGallery(QDialog):
 
         if self.aim2.isOutputOn(1):
             self.Odisplay1.setText("Output is On")
-            self.Odisplay1.setStyleSheet("background:green")
+            self.Odisplay1.setStyleSheet("background:limegreen")
         else:
             self.Odisplay1.setText("Output is Off")
             self.Odisplay1.setStyleSheet("background:red")
@@ -644,7 +644,7 @@ class WidgetGallery(QDialog):
 
         if self.aim2.isOutputOn(2):
             self.Odisplay2.setText("Output is On")
-            self.Odisplay2.setStyleSheet("background:green")
+            self.Odisplay2.setStyleSheet("background:limegreen")
         else:
             self.Odisplay2.setText("Output is Off")
             self.Odisplay2.setStyleSheet("background:red")
@@ -712,7 +712,7 @@ class WidgetGallery(QDialog):
             self.O1_was_on=self.aim2.isOutputOn(1)
             if self.aim2.isOutputOn(1):
                 self.Odisplay1.setText("Output is On")
-                self.Odisplay1.setStyleSheet("background:green")
+                self.Odisplay1.setStyleSheet("background:limegreen")
             else:
                 self.Odisplay1.setText("Output is Off")
                 self.Odisplay1.setStyleSheet("background:red")
@@ -730,7 +730,7 @@ class WidgetGallery(QDialog):
             self.O2_was_on=self.aim2.isOutputOn(2)
             if self.aim2.isOutputOn(2):
                 self.Odisplay2.setText("Output is On")
-                self.Odisplay2.setStyleSheet("background:green")
+                self.Odisplay2.setStyleSheet("background:limegreen")
             else:
                 self.Odisplay2.setText("Output is Off")
                 self.Odisplay2.setStyleSheet("background:red")
@@ -755,6 +755,16 @@ class WidgetGallery(QDialog):
             self.I2set=self.aim2.queryCurrent(2)
             self.I2setNum.setText("I Set Value: "+f"{self.I2set:.2f}"+" A")
 
+    def closeEvent(self, event):
+        try:
+            self.aim1.outputOff(wait=0)
+        except:
+            pass
+        try:
+            self.aim2.outputOffAll(wait=0)
+        except:
+            pass
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
