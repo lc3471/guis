@@ -40,9 +40,6 @@ from time import sleep
 import pyvisa as visa
 import re
 
-def xstr(s):
-    return str(s or '')
-
 class AimTTiEL302P(SCPI):
     """Basic class for controlling and accessing an Aim TTi EL302P-USB
     Power Supply. This series of power supplies only minimally adheres
@@ -90,27 +87,10 @@ class AimTTiEL302P(SCPI):
            controlled via VISA & front panel is locked out
         """
         self._instWrite('IFLOCK')
-
-    def beeperOn(self):
-        """Enable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
-        
-    def beeperOff(self):
-        """Disable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
         
     def isOutputOn(self, channel=None):
-        """Return true if the output of channel is ON, else false
-        """
-            
-        str = 'OUT?'
-        ret = self._instQuery(str)
+        str_ = 'OUT?'
+        ret = self._instQuery(str_)
         
         if (ret=="OUT ON\r"):
             return True
@@ -124,73 +104,45 @@ class AimTTiEL302P(SCPI):
             return False
     
     def outputOn(self, channel=None, wait=None):
-        """Turn on the output for channel
         
-           wait    - number of seconds to wait after sending command
-        """
-            
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
             
-        str = 'ON'
-        self._instWrite(str)
+        str_ = 'ON'
+        self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
     
     def outputOff(self, channel=None, wait=None):
-        """Turn off the output for channel
-        """
-                    
-        # If a wait time is NOT passed in, set wait to the
-        # default time
+        
         if wait is None:
             wait = self._wait
             
-        str = 'OFF'
-        self._instWrite(str)
+        str_ = 'OFF'
+        self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
     
     
     def setVoltage(self, voltage, channel=None, wait=None):
-        """Set the voltage value for the channel
         
-           voltage - desired voltage value as a floating point number
-           wait    - number of seconds to wait after sending command
-        """
-            
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
-        str = 'V {}'.format(voltage)
-        self._instWrite(str)
+        str_ = 'V {}'.format(voltage)
+        self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
         
     def setCurrent(self, current, channel=None, wait=None):
-        """Set the current value
-        
-           current - desired current value as a floating point number
-           wait    - number of seconds to wait after sending command
-        """
-        
-        # If a wait time is NOT passed in, set wait to the
-        # default time
+
         if wait is None:
             wait = self._wait
             
-        str = 'I {}'.format(current)
-        self._instWrite(str)
+        str_= 'I {}'.format(current)
+        self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
 
         
     def queryVoltage(self, channel=None):
-        """Return what voltage set value is (not the measured voltage,
-        but the set voltage)
-        
-        """
-        str = 'V?'
-        ret = self._instQuery(str)
+        str_ = 'V?'
+        ret = self._instQuery(str_)
         # Pull out words from response
         match = re.match('V\s(\d*\.\d*)',ret)
         if (match == None):
@@ -201,13 +153,8 @@ class AimTTiEL302P(SCPI):
             return float(words[0])
     
     def queryCurrent(self, channel=None):
-        """Return what current set value is (not the measured current,
-        but the set current)
-        """
-
-        str = 'I?'
-        ret = self._instQuery(str)
-
+        str_ = 'I?'
+        ret = self._instQuery(str_)
         # Pull out words from response
         match = re.match('I\s(\d*\.\d*)',ret)
         if (match == None):
@@ -218,12 +165,8 @@ class AimTTiEL302P(SCPI):
             return float(words[0])
     
     def measureVoltage(self, channel=None):
-        """Read and return a voltage measurement from channel
-        """
-
-        str = 'VO?'
-        ret = self._instQuery(str)
-
+        str_ = 'VO?'
+        ret = self._instQuery(str_)
         # Pull out words from response
         match = re.match('V\s(\d*\.\d*)',ret)
         if (match == None):
@@ -234,12 +177,8 @@ class AimTTiEL302P(SCPI):
             return float(words[0])
     
     def measureCurrent(self, channel=None):
-        """Read and return a current measurement from channel
-        """
-            
-        str = 'IO?'
-        ret = self._instQuery(str)
-
+        str_= 'IO?'
+        ret = self._instQuery(str_)
         # Pull out words from response
         match = re.match('I\s(\d*\.\d*)',ret)
         if (match == None):
@@ -248,59 +187,4 @@ class AimTTiEL302P(SCPI):
             # break out the words from the response
             words = match.groups()
             return float(words[0])
-    
 
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='Access and control a Aim TTi PL-P Series power supply')
-    parser.add_argument('chan', nargs='?', type=int, help='Channel to access/control (starts at 1)', default=1)
-    args = parser.parse_args()
-
-    from time import sleep
-    from os import environ
-    resource = environ.get('TTIPLP_IP', 'TCPIP0::192.168.1.100::9221::SOCKET')
-    ttiplp = AimTTiPLP(resource)
-    ttiplp.open()
-
-    ## set Remote Lock On
-    #ttiplp.setRemoteLock()
-    
-    ttiplp.beeperOff()
-    
-    if not ttiplp.isOutputOn(args.chan):
-        ttiplp.outputOn()
-        
-    print('Ch. {} Settings: {:6.4f} V  {:6.4f} A'.
-              format(args.chan, ttiplp.queryVoltage(),
-                         ttiplp.queryCurrent()))
-
-    voltageSave = ttiplp.queryVoltage()
-    
-    #print(ttiplp.idn())
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.7)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.3)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(voltageSave)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ## turn off the channel
-    ttiplp.outputOff()
-
-    ttiplp.beeperOn()
-
-    ## return to LOCAL mode
-    ttiplp.setLocal()
-    
-    ttiplp.close()

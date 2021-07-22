@@ -1,20 +1,8 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 18 14:06:41 2019
-
-@author: colin adams :^)
-
+@author: Laurel Carpenter
 """
-# TODO add auto-updating (0.5 s period?) elements that show the results of polling:
-#### the set voltage/current (queryVoltage/Current)
-#### the output status (isOutputOn)
-# TODO expand the GUI to incorporate:
-#### other PSUs
-#### the function generator
-# TODO logging
-
-
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
@@ -22,8 +10,6 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QFormLayout, QWidget, QMessageBox)
-#import serial
-#import time
 import sys
 import argparse
 
@@ -59,12 +45,8 @@ class WidgetGallery(QDialog):
         self.qTimer.setInterval(500)
         self.qTimer.start()
 
-        # start with a grid layout
         mainLayout = QGridLayout()
         
-        # build a PSUBox
-        #### some renaming in this function may be necessary as we build the GUI up to include other elements
-
         try:
             self.createPSU1Box()
         except VisaIOError as err:
@@ -79,9 +61,7 @@ class WidgetGallery(QDialog):
         except SerialException as err: 
             self.PSU2except(err)
 
-        # set the layout of the widget gallery to mainLayout
         self.setLayout(mainLayout)
-
         mainLayout.addWidget(self.PSU1Box,0,0)
         mainLayout.addWidget(self.PSU2Box,0,1)
 
@@ -101,8 +81,6 @@ class WidgetGallery(QDialog):
 
 
     def createPSU1Box(self):
-        
-        # connect to the PSU
         self.aim1 = AimTTiEL302P('ASRL/dev/psu1::INSTR')
         self.aim1.open()
 
@@ -119,14 +97,11 @@ class WidgetGallery(QDialog):
         
         self.qTimer.timeout.connect(self.query_voltage_PSU1)
         self.qTimer.timeout.connect(self.query_current_PSU1)
-
         self.qTimer.timeout.connect(self.measure_voltage_PSU1)
         self.qTimer.timeout.connect(self.measure_current_PSU1)
         self.qTimer.timeout.connect(self.check_output_PSU1)
 
-
         ##Creates a PSU Box, calls functions to create the Vbox and Ibox that go inside.
-        
         self.PSU1Box = QGroupBox("Control Single PSU")
         self.PSU1Box.setObjectName("psu1")
         self.PSU1Box.setStyleSheet("QGroupBox#psu1 { font-weight: bold; }")
@@ -149,12 +124,10 @@ class WidgetGallery(QDialog):
 
         self.PSU1vPrompt = QLabel("Voltage [V]")
         self.PSU1vSet = QLineEdit()
-        
         self.VsetNumber=QLabel()
         self.Vset=self.aim1.queryVoltage()
         self.VsetNumber.setText("V Set Value: "+f"{self.Vset:.2f}"+" V")
         self.VsetNumber.setFrameShape(QFrame.StyledPanel)
-
         self.setVButton_PSU1 = QPushButton("Set Voltage")
         self.setVButton_PSU1.clicked.connect(self.on_vbutton_PSU1_clicked)
         
@@ -172,12 +145,10 @@ class WidgetGallery(QDialog):
 
         self.PSU1iPrompt = QLabel("Current [A]")
         self.PSU1iSet = QLineEdit()
-
         self.IsetNumber=QLabel()
         self.Iset=self.aim1.queryCurrent()
         self.IsetNumber.setText("I Set Value: "+f"{self.Iset:.2f}"+" A")
         self.IsetNumber.setFrameShape(QFrame.StyledPanel)
-
         self.setIButton_PSU1 = QPushButton("Set Current")
         self.setIButton_PSU1.clicked.connect(self.on_ibutton_PSU1_clicked)
         
@@ -194,9 +165,7 @@ class WidgetGallery(QDialog):
 
         self.output_button_PSU1=QPushButton("Toggle Output")
         self.output_button_PSU1.clicked.connect(self.toggle_output_PSU1)
-
         self.Odisplay_PSU1=QLabel()
-
         self.Odisplay_PSU1.setAlignment(Qt.AlignCenter)
         self.Odisplay_PSU1.setFrameShape(QFrame.StyledPanel)
 
@@ -240,19 +209,6 @@ class WidgetGallery(QDialog):
         else:
             print("Pranked! I didn't actually do it because you wanted a dry run.")
 
-    """
-    # if "Toggle output" button pressed, then toggle the output
-    def on_output_clicked(self):
-        outputOn = self.aim.isOutputOn()
-        # once the output box is showing up, all of this is kinda redundant bc you will already know the status of the output
-        output_str = "on" if outputOn else "off"
-        new_output_str = "off" if outputOn else "on"
-        trigger_msg = QMessageBox.question(None,"Confirming action",f"Output is {output_str}, do you wish to turn it {new_output_str}?", QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
-
-        if trigger_msg == QMessageBox.Yes:
-            self.toggle_output()
-    """
-
     def toggle_output_PSU1(self):
         if not dry_run:
             if self.aim1.isOutputOn():
@@ -292,163 +248,101 @@ class WidgetGallery(QDialog):
 
 
 
-
     def createPSU2Box(self):
         self.aim2=AimTTiCPX400DP('ASRL/dev/ttyACM1::INSTR')
         self.aim2.open()
         
         self.was_VTracking=self.aim2.isVTracking()
-        #self.wasLock=self.aim2.isRemoteLock()
 
         self.VmeasNum1 = QLCDNumber()
         self.VmeasNum1.setSegmentStyle(QLCDNumber.Flat)
         self.Vmeas1 = self.aim2.measureVoltage(1)
-
         self.ImeasNum1 = QLCDNumber()
         self.ImeasNum1.setSegmentStyle(QLCDNumber.Flat)
         self.Imeas1 = self.aim2.measureCurrent(1)
-
         self.O1_was_on=self.aim2.isOutputOn(1)
 
         self.VmeasNum2 = QLCDNumber()
         self.VmeasNum2.setSegmentStyle(QLCDNumber.Flat)
         self.Vmeas2 = self.aim2.measureVoltage(2)
-
         self.ImeasNum2 = QLCDNumber()
         self.ImeasNum2.setSegmentStyle(QLCDNumber.Flat)
         self.Imeas2 = self.aim2.measureCurrent(2)
-
         self.O2_was_on=self.aim2.isOutputOn(2)
 
         self.qTimer.timeout.connect(self.check_VTracking)
-        #self.qTimer.timeout.connect(self.check_remoteLock)
-        
         self.qTimer.timeout.connect(self.query_voltage1)
         self.qTimer.timeout.connect(self.query_current1)
-
         self.qTimer.timeout.connect(self.query_voltage2)
         self.qTimer.timeout.connect(self.query_current2)
-
-
         self.qTimer.timeout.connect(self.measure_voltage1)
         self.qTimer.timeout.connect(self.measure_current1)
         self.qTimer.timeout.connect(self.check_output1)
-        
         self.qTimer.timeout.connect(self.measure_voltage2)
         self.qTimer.timeout.connect(self.measure_current2)
         self.qTimer.timeout.connect(self.check_output2)
 
-
         self.PSU2Box = QGroupBox("Control Double PSU")
         self.PSU2Box.setObjectName("psu2")
         self.PSU2Box.setStyleSheet("QGroupBox#psu2 { font-weight: bold; }")
-
         self.PSU2Layout = QGridLayout()
         self.PSU2Box.setLayout(self.PSU2Layout)
         
         self.create_box1()
         self.create_box2()
-
         self.create_controlBox()
 
         self.PSU2Layout.addWidget(self.controlBox,0,0)
-
         self.PSU2Layout.addWidget(self.box1,0,1)
         self.PSU2Layout.addWidget(self.box2,0,2)
 
     def create_box1(self):
-
         self.box1=QGroupBox("Control Main PS")
-
-
         self.create_Vbox1()
         self.create_Ibox1()
         self.create_Obox1()
-
         self.box1layout=QGridLayout()
         self.box1.setLayout(self.box1layout)
-
         self.box1layout.addWidget(self.Vbox1,0,0)
         self.box1layout.addWidget(self.Ibox1,0,1)
         self.box1layout.addWidget(self.Obox1,1,0,1,2)
     
     def create_box2(self):
-
         self.box2=QGroupBox("Control Secondary PS")
-
         self.create_Vbox2()
         self.create_Ibox2()
         self.create_Obox2()
-
         self.box2layout=QGridLayout()
         self.box2.setLayout(self.box2layout)
-
         self.box2layout.addWidget(self.Vbox2,0,0)
         self.box2layout.addWidget(self.Ibox2,0,1)
         self.box2layout.addWidget(self.Obox2,1,0,1,2)
     
     def create_controlBox(self):
-
         self.controlBox=QGroupBox()
-        
         self.create_OAllBox()
-        #self.create_RemBox()
         self.create_trackingBox()
-
         self.controlLayout=QGridLayout()
         self.controlBox.setLayout(self.controlLayout)
-
         self.controlLayout.addWidget(self.OAllBox,0,0)
-        #self.controlLayout.addWidget(self.remBox,1,0)
-        self.controlLayout.addWidget(self.VTrackBox,2,0)
+        self.controlLayout.addWidget(self.VTrackBox,1,0)
 
     def create_OAllBox(self):
-        
         self.OAllBox = QGroupBox("Master Output")
         self.OAllLayout = QVBoxLayout()
         self.OAllBox.setLayout(self.OAllLayout)
-
         self.OAllButton = QPushButton("Toggle Master Output")
         self.OAllButton.clicked.connect(self.toggle_outputs_all)
-
         self.OAllLayout.addWidget(self.OAllButton)
 
-    """def create_RemBox(self):
-
-        self.remBox=QGroupBox("Remote Lock")
-        self.remLayout=QVBoxLayout()
-        self.remBox.setLayout(self.remLayout)
-        
-        self.remButton=QPushButton("Toggle Remote Lock")
-        self.remButton.clicked.connect(self.toggle_remoteLock)
-
-        self.remDisplay=QLabel()
-
-        self.remDisplay.setAlignment(Qt.AlignCenter)
-        self.remDisplay.setFrameShape(QFrame.StyledPanel)
-
-        if self.aim2.isRemoteLock():
-            self.remDisplay.setText("Remote Lock is On")
-            self.remDisplay.setStyleSheet("background:green")
-        else:
-            self.remDisplay.setText("Remote Lock is Off")
-            self.remDisplay.setStyleSheet("background:red")
-
-        self.remLayout.addWidget(self.remDisplay)
-        self.remLayout.addWidget(self.remButton)
-        """
-
     def create_trackingBox(self):
-        
         self.VTrackBox=QGroupBox("Voltage Tracking")
         self.VTlayout=QVBoxLayout()
         self.VTrackBox.setLayout(self.VTlayout)
 
         self.VTrackButton=QPushButton("Toggle Voltage Tracking")
         self.VTrackButton.clicked.connect(self.toggle_VTracking)
-
         self.VTdisplay=QLabel()
-
         self.VTdisplay.setAlignment(Qt.AlignCenter)
         self.VTdisplay.setFrameShape(QFrame.StyledPanel)
 
@@ -461,26 +355,6 @@ class WidgetGallery(QDialog):
 
         self.VTlayout.addWidget(self.VTdisplay)
         self.VTlayout.addWidget(self.VTrackButton)
-        
-
-    """def toggle_remoteLock(self):
-        if not dry_run:
-            if self.aim2.isRemoteLock():
-                self.aim2.setRemoteUnLock()
-            else:
-                self.aim2.setRemoteLock()
-        else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
-
-    def check_remoteLock(self):
-        if self.wasLock != self.aim2.isRemoteLock():
-            if self.aim2.isRemoteLock():
-                self.remDisplay.setText("Remote Lock is On")
-                self.remDisplay.setStyleSheet("background:green")
-            else:
-                self.remDisplay.setText("Remote Lock is Off")
-                self.remDisplay.setStyleSheet("background:red")
-        """
 
     def toggle_outputs_all(self):
         if not dry_run:
@@ -516,7 +390,6 @@ class WidgetGallery(QDialog):
                 self.VTdisplay.setText("Voltage Tracking is On")
                 self.VTdisplay.setStyleSheet("background:limegreen")
         
-
     def create_Vbox1(self):
         self.Vbox1 = QGroupBox("Voltage")
         self.Vlayout1 = QVBoxLayout()
@@ -524,10 +397,8 @@ class WidgetGallery(QDialog):
 
         self.PSU2v1Prompt = QLabel("PSU 1 Voltage [V]")
         self.PSU2v1Set = QLineEdit()
-
         self.setVButton1 = QPushButton("Set Voltage")
         self.setVButton1.clicked.connect(self.on_vbutton1_clicked)
-
         self.V1setNum=QLabel()
         self.V1set=self.aim2.queryVoltage(1)
         self.V1setNum.setText("V Set Value: "+f"{self.V1set:.2f}"+" V")
@@ -546,10 +417,8 @@ class WidgetGallery(QDialog):
 
         self.PSU2v2Prompt = QLabel("PSU 2 Voltage [V]")
         self.PSU2v2Set = QLineEdit()
-
         self.setVButton2 = QPushButton("Set Voltage")
         self.setVButton2.clicked.connect(self.on_vbutton2_clicked)
-
         self.V2setNum=QLabel()
         self.V2set=self.aim2.queryVoltage(2)
         self.V2setNum.setText("V Set Value: "+f"{self.V2set:.2f}"+" V")
@@ -568,12 +437,10 @@ class WidgetGallery(QDialog):
 
         self.PSU2i1Prompt = QLabel("PSU 1 Current [A]")
         self.PSU2i1Set = QLineEdit()
-
         self.I1setNum=QLabel()
         self.I1set=self.aim2.queryCurrent(1)
         self.I1setNum.setText("I Set Value: "+f"{self.I1set:.2f}"+" A")
         self.I1setNum.setFrameShape(QFrame.StyledPanel)
-
         self.setIButton1 = QPushButton("Set Current")
         self.setIButton1.clicked.connect(self.on_ibutton1_clicked)
 
@@ -591,12 +458,10 @@ class WidgetGallery(QDialog):
 
         self.PSU2i2Prompt = QLabel("PSU 2 Current [A]")
         self.PSU2i2Set = QLineEdit()
-
         self.I2setNum=QLabel()
         self.I2set=self.aim2.queryCurrent(2)
         self.I2setNum.setText("I Set Value: "+f"{self.I2set:.2f}"+" A")
         self.I2setNum.setFrameShape(QFrame.StyledPanel)
-
         self.setIButton2 = QPushButton("Set Current")
         self.setIButton2.clicked.connect(self.on_ibutton2_clicked)
 
@@ -613,9 +478,7 @@ class WidgetGallery(QDialog):
 
         self.output_button1=QPushButton("Toggle Output")
         self.output_button1.clicked.connect(lambda: self.toggle_output(1))
-
         self.Odisplay1=QLabel()
-
         self.Odisplay1.setAlignment(Qt.AlignCenter)
         self.Odisplay1.setFrameShape(QFrame.StyledPanel)
 
@@ -636,9 +499,7 @@ class WidgetGallery(QDialog):
 
         self.output_button2=QPushButton("Toggle Output")
         self.output_button2.clicked.connect(lambda: self.toggle_output(2))
-
         self.Odisplay2=QLabel()
-
         self.Odisplay2.setAlignment(Qt.AlignCenter)
         self.Odisplay2.setFrameShape(QFrame.StyledPanel)
 

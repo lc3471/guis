@@ -40,10 +40,6 @@ from time import sleep
 import pyvisa as visa
 import re
 
-def xstr(s):
-    return str(s or '')
-
-
 class AimTTiCPX400DP(SCPI):
     """Basic class for controlling and accessing an Aim TTi PL-P Series
     Power Supply. This series of power supplies only minimally adheres
@@ -104,20 +100,6 @@ class AimTTiCPX400DP(SCPI):
             return True
         else:
             return False
-
-    def beeperOn(self):
-        """Enable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
-        
-    def beeperOff(self):
-        """Disable the system beeper for the instrument"""
-        # NOTE: Unsupported command by this power supply. However,
-        # instead of raising an exception and breaking any scripts,
-        # simply return quietly.
-        pass
         
     def isOutputOn(self, channel=None):
         """Return true if the output of channel is ON, else false
@@ -140,19 +122,9 @@ class AimTTiCPX400DP(SCPI):
             return False
     
     def outputOn(self, channel=None, wait=None):
-        """Turn on the output for channel
         
-           wait    - number of seconds to wait after sending command
-           channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
-            
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
             
@@ -161,18 +133,9 @@ class AimTTiCPX400DP(SCPI):
         sleep(wait)             # give some time for PS to respond
     
     def outputOff(self, channel=None, wait=None):
-        """Turn off the output for channel
         
-           channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
-                    
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
             
@@ -181,12 +144,7 @@ class AimTTiCPX400DP(SCPI):
         sleep(wait)             # give some time for PS to respond
     
     def outputOnAll(self, wait=None):
-        """Turn on the output for ALL channels
         
-        """
-
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
 
@@ -195,12 +153,7 @@ class AimTTiCPX400DP(SCPI):
         sleep(wait)             # give some time for PS to respond
     
     def outputOffAll(self, wait=None):
-        """Turn off the output for ALL channels
         
-        """
-
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
 
@@ -209,20 +162,9 @@ class AimTTiCPX400DP(SCPI):
         sleep(wait)             # give some time for PS to respond
     
     def setVoltage(self, voltage, channel=None, wait=None):
-        """Set the voltage value for the channel
         
-           voltage - desired voltage value as a floating point number
-           wait    - number of seconds to wait after sending command
-           channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
-            
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
             
@@ -231,20 +173,9 @@ class AimTTiCPX400DP(SCPI):
         sleep(wait)             # give some time for PS to respond
         
     def setCurrent(self, current, channel=None, wait=None):
-        """Set the current value for the channel
         
-           current - desired current value as a floating point number
-           channel - number of the channel starting at 1
-           wait    - number of seconds to wait after sending command
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
-
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
             
@@ -254,14 +185,7 @@ class AimTTiCPX400DP(SCPI):
 
         
     def queryVoltage(self, channel=None):
-        """Return what voltage set value is (not the measured voltage,
-        but the set voltage)
-        
-        channel - number of the channel starting at 1
-        """
 
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
             
@@ -284,14 +208,7 @@ class AimTTiCPX400DP(SCPI):
                 return float(words[2])
     
     def queryCurrent(self, channel=None):
-        """Return what current set value is (not the measured current,
-        but the set current)
         
-        channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
                     
@@ -314,13 +231,7 @@ class AimTTiCPX400DP(SCPI):
                 return float(words[2])
     
     def measureVoltage(self, channel=None):
-        """Read and return a voltage measurement from channel
         
-           channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
                     
@@ -342,13 +253,7 @@ class AimTTiCPX400DP(SCPI):
                 return float(words[0])
     
     def measureCurrent(self, channel=None):
-        """Read and return a current measurement from channel
         
-           channel - number of the channel starting at 1
-        """
-
-        # If a channel number is passed in, make it the
-        # current channel
         if channel is not None:
             self.channel = channel
             
@@ -369,59 +274,4 @@ class AimTTiCPX400DP(SCPI):
             else:
                 # response checks out so return the fixed point response as a float()
                 return float(words[0])
-    
 
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='Access and control a Aim TTi PL-P Series power supply')
-    parser.add_argument('chan', nargs='?', type=int, help='Channel to access/control (starts at 1)', default=1)
-    args = parser.parse_args()
-
-    from time import sleep
-    from os import environ
-    resource = environ.get('TTIPLP_IP', 'TCPIP0::192.168.1.100::9221::SOCKET')
-    ttiplp = AimTTiPLP(resource)
-    ttiplp.open()
-
-    ## set Remote Lock On
-    #ttiplp.setRemoteLock()
-    
-    ttiplp.beeperOff()
-    
-    if not ttiplp.isOutputOn(args.chan):
-        ttiplp.outputOn()
-        
-    print('Ch. {} Settings: {:6.4f} V  {:6.4f} A'.
-              format(args.chan, ttiplp.queryVoltage(),
-                         ttiplp.queryCurrent()))
-
-    voltageSave = ttiplp.queryVoltage()
-    
-    #print(ttiplp.idn())
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.7)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.3)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(voltageSave)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ## turn off the channel
-    ttiplp.outputOff()
-
-    ttiplp.beeperOn()
-
-    ## return to LOCAL mode
-    ttiplp.setLocal()
-    
-    ttiplp.close()

@@ -1,35 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-
-# Copyright (c) 2018, Stephen Goadhouse <sgoadhouse@virginia.edu>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
- 
-#-------------------------------------------------------------------------------
-#  Control a Aim TTi PL-P Series DC Power Supplies with PyVISA
-#-------------------------------------------------------------------------------
-
-# For future Python3 compatibility:
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# Author: Laurel Carpenter
 
 try:
     from . import SCPI
@@ -41,43 +12,15 @@ import pyvisa as visa
 import re
 from math import inf
 
-def xstr(s):
-    return str(s or '')
-
 class RigolDG5000(SCPI):
-    """Basic class for controlling and accessing an Aim TTi EL302P-USB
-    Power Supply. This series of power supplies only minimally adheres
-    to any LXI specifications and so it uses its own commands although
-    it adheres to the basic syntax of SCPI. The underlying accessor
-    functions of SCPI.py are used but the top level are all re-written
-    below to handle the very different command syntax. This shows how
-    one might add packages to support other such power supplies that
-    only minimally adhere to the command standards.
-    """
-
     def __init__(self, resource, wait=1.0):
-        """Init the class with the instruments resource string
-
-        resource - resource string or VISA descriptor, like TCPIP0::192.168.1.100::9221::SOCKET 
-        wait     - float that gives the default number of seconds to wait after sending each command
-
-        NOTE: According to the documentation for this power supply, the
-        resource string when using the Ethernet access method must look
-        like TCPIP0::192.168.1.100::9221::SOCKET where 192.168.1.100 is
-        replaced with the specific IP address of the power supply. The
-        inclusion of the 9221 port number and SOCKET keyword are
-        apparently mandatory for these power supplies.
-        """
-        super(RigolDG5000, self).__init__(resource, max_chan=3, wait=wait,
+        super(RigolDG5000, self).__init__(resource, max_chan=2, wait=wait,
                 cmd_prefix='',
                 read_termination='',
                 write_termination='\r\n')
         self.open()
 
     def isOutputOn(self, channel=None):
-        """Return true if the output of channel is ON, else false
-        """
-            
         _str = (':OUTP{}?').format(channel)
         ret = self._instQuery(_str)
         
@@ -87,29 +30,15 @@ class RigolDG5000(SCPI):
             return False
     
     def outputOn(self, channel=None, wait=None):
-        """Turn on the output for channel
-        
-           wait    - number of seconds to wait after sending command
-        """
-            
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
-            
         str_ = (':OUTP{} ON').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
     
     def outputOff(self, channel=None, wait=None):
-        """Turn off the output for channel
-        """
-                    
-        # If a wait time is NOT passed in, set wait to the
-        # default time
         if wait is None:
             wait = self._wait
-            
         str_ = (':OUTP{} OFF').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
@@ -121,7 +50,6 @@ class RigolDG5000(SCPI):
         # amp: unit=Vpp
         # offset: unit=Vdc
         # delay: unit=s
-
         if wait is None:
             wait=self._wait
 
@@ -130,7 +58,6 @@ class RigolDG5000(SCPI):
         sleep(wait)
     
     def queryApply(self, channel=None):
-        
         str_=(":SOUR{}:APPL?").format(channel)
         ret=self._instQuery(str_)
         ret=ret[:(len(ret)-2)] # remove '\n' from end of string
@@ -143,11 +70,9 @@ class RigolDG5000(SCPI):
             else:
                 lst[i]=float(lst[i])
         # lst='waveform name', 'freq', 'amp', 'offset', 'phase/delay'
-
         return lst
 
     def dutyCycle(self, pct=None, channel=None, wait=None, Min=False, Max=False):
-
         if wait is None: 
             wait=self._wait
 
@@ -167,11 +92,9 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-
         return ret
 
     def pulseDelay(self, delay=None, channel=None, wait=None, Min=False, Max=False):
-
         if wait is None:
             wait=self._wait
 
@@ -191,14 +114,12 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-
         return ret
 
     def holdWidth(self, channel=None, wait=None):
         # hold pulse width (instead of duty cycle)
         if wait is None:
             wait=self._wait
-        
         str_=(":SOUR{}:PULS:HOLD WIDT").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -207,7 +128,6 @@ class RigolDG5000(SCPI):
         # hold duty cycle (instead of pulse width)
         if wait is None:
             wait=self._wait
-
         str_=(":SOUR{}:PULS:HOLD DUTY").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -225,7 +145,6 @@ class RigolDG5000(SCPI):
             return False
 
     def transitionLeading(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
-
         if wait is None:
             wait=self._wait
 
@@ -245,11 +164,9 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-
         return ret
 
     def transitionTrailing(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
-
         if wait is None:
             wait=self._wait
 
@@ -269,11 +186,9 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-
         return ret
 
     def pulseWidth(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
-        
         if wait is None:
             wait=self._wait
 
@@ -293,11 +208,9 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-
         return ret
 
     def setImpedance(self, ohms=None, channel=None, wait=None, inf=False, Min=False, Max=False):
-
         if wait is None:
             wait=self._wait
 
@@ -337,7 +250,6 @@ class RigolDG5000(SCPI):
         # set polarity to normal
         if wait is None:
             wait=self._wait
-
         str_=(":OUTP{}:POL NORM").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -346,7 +258,6 @@ class RigolDG5000(SCPI):
         # set polarity to inverted
         if wait is None:
             wait=self._wait
-        
         str_=(":OUTP{}:POL INV").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -367,7 +278,6 @@ class RigolDG5000(SCPI):
         # turn sync on
         if wait is None:
             wait=self._wait
-
         str_=(":OUTP{}:SYNC ON").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -376,7 +286,6 @@ class RigolDG5000(SCPI):
         # turn sync off
         if wait is None:
             wait=self._wait
-
         str_=(":OUTP{}:SYNC OFF").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -396,7 +305,6 @@ class RigolDG5000(SCPI):
         # set sync polarity to positive
         if wait is None:
             wait=self._wait
-
         str_=(":OUTP{}:SYNC:POL POS").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -405,7 +313,6 @@ class RigolDG5000(SCPI):
         # set sync polarity to negative
         if wait is None:
             wait=self._wait
-
         str_=(":OUTP{}:SYNC:POL NEG").format(channel)
         self._instWrite(str_)
         sleep(wait)
@@ -423,25 +330,23 @@ class RigolDG5000(SCPI):
             return False
 
     def saverOn(self, wait=None):
-
+        # screensaver
         if wait is None:
             wait=self._wait
-
         str_=":DISP:SAV ON"
         self._instWrite(str_)
         sleep(wait)
 
     def saverOff(self, wait=None):
-
+        # screensaver
         if wait is None:
             wait=self._wait
-
         str_=":DISP:SAV OFF"
         self._instWrite(str_)
         sleep(wait)
 
     def isSaverOn(self):
-
+        # screensaver
         str_=":DISP:SAV?"
         ret=self._instQuery(str_)
         ret=ret.strip('"')
@@ -452,65 +357,9 @@ class RigolDG5000(SCPI):
             return False
 
     def saverImm(self, wait=None):
-
+        # screensaver
         if wait is None:
             wait=self._wait
-
         str_=":DISP:SAV:IMM"
         self._instWrite(str_)
         sleep(wait)
-
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='Access and control a Aim TTi PL-P Series power supply')
-    parser.add_argument('chan', nargs='?', type=int, help='Channel to access/control (starts at 1)', default=1)
-    args = parser.parse_args()
-
-    from time import sleep
-    from os import environ
-    resource = environ.get('TTIPLP_IP', 'TCPIP0::192.168.1.100::9221::SOCKET')
-    ttiplp = AimTTiPLP(resource)
-    ttiplp.open()
-
-    ## set Remote Lock On
-    #ttiplp.setRemoteLock()
-    
-    ttiplp.beeperOff()
-    
-    if not ttiplp.isOutputOn(args.chan):
-        ttiplp.outputOn()
-        
-    print('Ch. {} Settings: {:6.4f} V  {:6.4f} A'.
-              format(args.chan, ttiplp.queryVoltage(),
-                         ttiplp.queryCurrent()))
-
-    voltageSave = ttiplp.queryVoltage()
-    
-    #print(ttiplp.idn())
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.7)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(2.3)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ttiplp.setVoltage(voltageSave)
-
-    print('{:6.4f} V'.format(ttiplp.measureVoltage()))
-    print('{:6.4f} A'.format(ttiplp.measureCurrent()))
-
-    ## turn off the channel
-    ttiplp.outputOff()
-
-    ttiplp.beeperOn()
-
-    ## return to LOCAL mode
-    ttiplp.setLocal()
-    
-    ttiplp.close()
