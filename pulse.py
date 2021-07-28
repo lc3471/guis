@@ -1,12 +1,6 @@
-#!/usr/env/bin python
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 18 14:06:41 2019
-
-@author: Laurel Carpenter
-
-"""
-
+# Laurel Carpenter
+# 07/28/2021
+# adapted from pulser_gui.py
 
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
@@ -15,41 +9,20 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QFormLayout, QWidget, QMessageBox)
-#import serial
-#import time
-import sys
-import argparse
 
 from dcps import RigolDG5000
 
-import struct
-import functools
-
-from datetime import datetime
-
 from math import inf
 
-parser=argparse.ArgumentParser()
-parser.add_argument('--dry_run',
-                        type=bool,
-                        default=False,
-                        help='Run without controlling the flasher (default=False)')
-args = parser.parse_args()
-
-chr = functools.partial(struct.pack,'B')
-
-windows_system = False
-dry_run = args.dry_run
-
-class WidgetGallery(QDialog):
+class Pulse(QDialog):
     def __init__(self, parent=None):
-        super(WidgetGallery, self).__init__(parent)
+        super(Pulse, self).__init__(parent)
 
-        # start a timer ?? 
+        # start a timer ??
         self.qTimer = QTimer()
         self.qTimer.setInterval(500)
         self.qTimer.start()
-        
+
         self.qTimer.timeout.connect(self.check_output)
         self.qTimer.timeout.connect(self.check_pulse)
         self.qTimer.timeout.connect(self.check_polarity)
@@ -62,17 +35,17 @@ class WidgetGallery(QDialog):
         self.qTimer.timeout.connect(self.check_hold)
         self.qTimer.timeout.connect(self.check_lead)
         self.qTimer.timeout.connect(self.check_trail)
-        
+
         # whether to check channel 1 and channel 2 or not
         self.check1=True
         self.check2=False
 
         # start with a grid layout
         mainLayout = QGridLayout()
-        
+
         # build a PSUBox
         #### some renaming in this function may be necessary as we build the GUI up to include other elements
-        
+
         self.create_pulser_box()
         mainLayout.addWidget(self.pulser_box,0,0)
 
@@ -80,14 +53,14 @@ class WidgetGallery(QDialog):
         self.setLayout(mainLayout)
 
     def create_pulser_box(self):
-        
+
         # connect to pulser
         self.Rigol=RigolDG5000('USB0::6833::1600::DG5T220100004\x00::0::INSTR')
 
         self.pulser_box=QGroupBox("Rigol Pulser")
         self.pulser_layout=QGridLayout()
         self.pulser_box.setLayout(self.pulser_layout)
-        
+
         # 2 boxes for 2 channels
         self.create_box1()
         self.pulser_layout.addWidget(self.box1,0,0)
@@ -99,7 +72,7 @@ class WidgetGallery(QDialog):
         self.box1=QGroupBox("Channel 1")
         self.box1layout=QGridLayout()
         self.box1.setLayout(self.box1layout)
-        
+
         self.check1button=QPushButton("Toggle Using Channel 1")
         self.check1button.clicked.connect(self.toggle_check1)
         self.check1disp=QLabel("Channel 1 In Use") # display whether communicating w channel 1
@@ -117,19 +90,20 @@ class WidgetGallery(QDialog):
         self.box1layout.addWidget(self.Obox1,1,0)
         self.box1layout.addWidget(self.Pbox1,1,1)
 
+
     def create_box2(self):
 
         self.box2=QGroupBox("Channel 2")
         self.box2layout=QGridLayout()
         self.box2.setLayout(self.box2layout)
-        
+
         self.check2button=QPushButton("Toggle Using Channel 2")
         self.check2button.clicked.connect(self.toggle_check2)
         self.check2disp=QLabel("Channel 2 Not In Use") # display whether communicating w channel 2
         self.check2disp.setAlignment(Qt.AlignCenter)
         self.check2disp.setFrameShape(QFrame.StyledPanel)
         self.check2disp.setStyleSheet("background:red")
-        
+
         self.box2layout.addWidget(self.check2disp,0,0)
         self.box2layout.addWidget(self.check2button,0,1)
 
@@ -233,13 +207,13 @@ class WidgetGallery(QDialog):
         self.outLayout2.addWidget(self.Obutton2)
 
     def create_polBox1(self):
-        
+
         # essentially same deal as output toggle/display
         self.polBox1=QGroupBox("Polarity")
         self.polLayout1=QVBoxLayout()
         self.polBox1.setLayout(self.polLayout1)
 
-        self.polButton1=QPushButton("Toggle Polarity") 
+        self.polButton1=QPushButton("Toggle Polarity")
         self.polButton1.clicked.connect(lambda: self.toggle_polarity(1))
 
         self.polDisplay1=QLabel()
@@ -255,7 +229,7 @@ class WidgetGallery(QDialog):
         else: # red if inverted
             self.polDisplay1.setText("Inverted")
             self.polDisplay1.setStyleSheet("background:red")
-        
+
         self.polLayout1.addWidget(self.polDisplay1)
         self.polLayout1.addWidget(self.polButton1)
 
@@ -349,7 +323,7 @@ class WidgetGallery(QDialog):
 
         self.syncPolButton1=QPushButton("Toggle Sync Polarity") # set sync polarity pos/neg
         self.syncPolButton1.clicked.connect(lambda: self.toggle_syncPol(1))
-        
+
         self.syncPolDisplay1=QLabel()
 
         self.syncPolDisplay1.setAlignment(Qt.AlignCenter)
@@ -392,6 +366,7 @@ class WidgetGallery(QDialog):
 
         self.sync2layout.addWidget(self.sync2display)
         self.sync2layout.addWidget(self.sync2button)
+
 
     def create_syncPolBox2(self):
 
@@ -452,7 +427,6 @@ class WidgetGallery(QDialog):
         self.Playout1.addWidget(self.lead1box,5,0)
         self.Playout1.addWidget(self.trail1box,5,1)
 
-
     def create_Pbox2(self):
 
         self.Pbox2=QGroupBox("Pulse")
@@ -493,7 +467,7 @@ class WidgetGallery(QDialog):
 
         self.freq1disp=QLCDNumber() # display freq as LCD number
         self.freq1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.freq1setLabel=QLabel("Set Frequency")
         self.freq1set=QLineEdit() # input new freq
 
@@ -508,7 +482,7 @@ class WidgetGallery(QDialog):
 
         self.amp1disp=QLCDNumber() # display
         self.amp1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.amp1setLabel=QLabel("Set Amplitude")
         self.amp1set=QLineEdit() # input
 
@@ -523,7 +497,7 @@ class WidgetGallery(QDialog):
 
         self.os1disp=QLCDNumber() # display
         self.os1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.os1setLabel=QLabel("Set Offset")
         self.os1set=QLineEdit() # input
 
@@ -538,7 +512,7 @@ class WidgetGallery(QDialog):
 
         self.delay1disp=QLCDNumber() # display
         self.delay1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.delay1setLabel=QLabel("Set Delay")
         self.delay1set=QLineEdit() # input
 
@@ -659,7 +633,7 @@ class WidgetGallery(QDialog):
         else: # blue if holding duty cycle
             self.hold1disp.setText("Holding Duty")
             self.hold1disp.setStyleSheet("background:cyan")
-        
+
         self.hold1layout.addWidget(self.hold1disp)
         self.hold1layout.addWidget(self.hold1button)
 
@@ -816,21 +790,16 @@ class WidgetGallery(QDialog):
         self.trail2layout.addWidget(self.trail2set)
         self.trail2layout.addWidget(self.trail2button)
 
-
-
     def toggle_output(self, channel=1):
-        if not dry_run: # don't want to actually turn on if dry run
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isOutputOn(channel): # if on
-                self.Rigol.outputOff(channel) # turn off
-            else: # if off
-                self.Rigol.outputOn(channel) # turn on
-        else: 
-            print("Pranked! dry run :)")
+        if self.Rigol.isOutputOn(channel): # if on
+            self.Rigol.outputOff(channel) # turn off
+        else: # if off
+            self.Rigol.outputOn(channel) # turn on
 
     def check_output(self): # checks both outputs at the same time
         if self.check1:
@@ -856,18 +825,15 @@ class WidgetGallery(QDialog):
                     self.Odisplay2.setStyleSheet("background:red")
 
     def toggle_polarity(self, channel=1):
-        if not dry_run: # don't want to actually change if dry run
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isNorm(channel):
-                self.Rigol.polarityInv(channel)
-            else:
-                self.Rigol.polarityNorm(channel)
+        if self.Rigol.isNorm(channel):
+            self.Rigol.polarityInv(channel)
         else:
-            print("Pranked! dry run :)")
+            self.Rigol.polarityNorm(channel)
 
     def check_polarity(self): # checks both at same time, same concept as check_output
         if self.check1:
@@ -891,32 +857,26 @@ class WidgetGallery(QDialog):
                     self.polDisplay2.setStyleSheet("background:red")
 
     def toggle_sync(self, channel=1):
-        if not dry_run: # don't want to actually change if dry run
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isSyncOn(channel):
-                self.Rigol.syncOff(channel)
-            else:
-                self.Rigol.syncOn(channel)
+        if self.Rigol.isSyncOn(channel):
+            self.Rigol.syncOff(channel)
         else:
-            print("Pranked! dry run :)")
+            self.Rigol.syncOn(channel)
 
-    def toggle_syncPol(self, channel=1): 
-        if not dry_run: # don't want to actually change if dry run
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+    def toggle_syncPol(self, channel=1):
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isSyncPolPos(channel):
-                self.Rigol.syncPolNeg(channel)
-            else:
-                self.Rigol.syncPolPos(channel)
+        if self.Rigol.isSyncPolPos(channel):
+            self.Rigol.syncPolNeg(channel)
         else:
-            print("Pranked! dry run :)")
+            self.Rigol.syncPolPos(channel)
 
     def check_sync(self): # checks both channels at same time, same as check_output
         if self.check1:
@@ -961,152 +921,109 @@ class WidgetGallery(QDialog):
                     self.syncPolDisplay2.setStyleSheet("background:red")
 
     def toggle_impedance(self, channel=1):
-        if not dry_run: # don't want to actually change if dry run
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isImpInf(channel): # if infinite
-                self.Rigol.setImpedance(50,channel) # set to 50 ohms
-            else: # if 50 ohms (or something else?)
-                self.Rigol.setImpedance(inf,channel) # set infinite
-        else:
-            print("Pranked! dry run :^)")
+        if self.Rigol.isImpInf(channel): # if infinite
+            self.Rigol.setImpedance(50,channel) # set to 50 ohms
+        else: # if 50 ohms (or something else?)
+            self.Rigol.setImpedance(inf,channel) # set infinite
+
 
     def on_pulse1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            # take frequency, amplitude, offset, and delay from QLineEdit boxes
-            freq=self.freq1set.text() 
-            amp=self.amp1set.text()
-            offset=self.os1set.text()
-            delay=self.delay1set.text()
-            channel=1
-
-            self.Rigol.applyPulse(freq, amp, offset, delay, channel)
-        else:
-            print("dry run")
+        if not self.check1:
+            self.toggle_check1()
+        # take frequency, amplitude, offset, and delay from QLineEdit boxes
+        freq=self.freq1set.text()
+        amp=self.amp1set.text()
+        offset=self.os1set.text()
+        delay=self.delay1set.text()
+        channel=1
+        self.Rigol.applyPulse(freq, amp, offset, delay, channel)
 
     def on_pulse2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            # take frequency, amplitude, offset, and delay from QLineEdit boxes
-            freq=self.freq2set.text()
-            amp=self.amp2set.text()
-            offset=self.os2set.text()
-            delay=self.delay2set.text()
-            channel=2
-
-            self.Rigol.applyPulse(freq, amp, offset, delay, channel)
-        else:
-            print("dry run")
+        if not self.check2:
+            self.toggle_check2()
+        # take frequency, amplitude, offset, and delay from QLineEdit boxes
+        freq=self.freq2set.text()
+        amp=self.amp2set.text()
+        offset=self.os2set.text()
+        delay=self.delay2set.text()
+        channel=2
+        self.Rigol.applyPulse(freq, amp, offset, delay, channel)
 
     def on_duty1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            duty=self.duty1set.text() # take duty cycle from QLineEdit box
-            self.Rigol.dutyCycle(duty,1)
-        else:
-            print("dry run")
+        if not self.check1:
+            self.toggle_check1()
+        duty=self.duty1set.text() # take duty cycle from QLineEdit box
+        self.Rigol.dutyCycle(duty,1)
 
     def on_duty2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            duty=self.duty2set.text() # take duty cycle from QLineEdit box
-            self.Rigol.dutyCycle(duty,2)
-        else:
-            print("dry run")
+        if not self.check2:
+            self.toggle_check2()
+        duty=self.duty2set.text() # take duty cycle from QLineEdit box
+        self.Rigol.dutyCycle(duty,2)
 
     def on_pd1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            pd=self.pd1set.text()
-            self.Rigol.pulseDelay(pd,1)
-        else:
-            print("dry run")
+        if not self.check1:
+            self.toggle_check1()
+        pd=self.pd1set.text()
+        self.Rigol.pulseDelay(pd,1)
 
     def on_pd2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            pd=self.pd2set.text()
-            self.Rigol.pulseDelay(pd,2)
-        else:
-            print("dry run")
+        if not self.check2:
+            self.toggle_check2()
+        pd=self.pd2set.text()
+        self.Rigol.pulseDelay(pd,2)
 
     def toggle_hold(self, channel=1):
-        if not dry_run:
-            if (channel==1) and not self.check1:
-                self.toggle_check1()
-            if (channel==2) and not self.check2:
-                self.toggle_check2()
+        if (channel==1) and not self.check1:
+            self.toggle_check1()
+        if (channel==2) and not self.check2:
+            self.toggle_check2()
 
-            if self.Rigol.isWidth(channel): # if holding width
-                self.Rigol.holdDuty(channel) # hold duty
-            else: # if holding duty
-                self.Rigol.holdWidth(channel) # hold width
-        else:
-            print("Pranked! dry run :)")
+        if self.Rigol.isWidth(channel): # if holding width
+            self.Rigol.holdDuty(channel) # hold duty
+        else: # if holding duty
+            self.Rigol.holdWidth(channel) # hold width
 
     def on_lead1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            lead=self.lead1set.text()
-            self.Rigol.transitionLeading(lead,1)
-        else:
-            print("dry run")
+        if not self.check1:
+            self.toggle_check1()
+        lead=self.lead1set.text()
+        self.Rigol.transitionLeading(lead,1)
 
     def on_lead2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            lead=self.lead2set.text()
-            self.Rigol.transitionLeading(lead,2)
-        else:
-            print("dry run")
+        if not self.check2:
+            self.toggle_check2()
+        lead=self.lead2set.text()
+        self.Rigol.transitionLeading(lead,2)
 
     def on_trail1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            trail=self.trail1set.text()
-            self.Rigol.transitionTrailing(trail,1)
-        else:
-            print("dry run")
+        if not self.check1:
+            self.toggle_check1()
+        trail=self.trail1set.text()
+        self.Rigol.transitionTrailing(trail,1)
 
     def on_trail2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            trail=self.trail2set.text()
-            self.Rigol.transitionTrailing(trail,2)
-        else:
-            print('dry run')
+        if not self.check2:
+            self.toggle_check2()
+        trail=self.trail2set.text()
+        self.Rigol.transitionTrailing(trail,2)
 
     def on_width1_clicked(self):
-        if not dry_run:
-            if not self.check1:
-                self.toggle_check1()
-            width=self.width1set.text()
-            self.Rigol.pulseWidth(width,1)
-        else:
-            print('dry run')
+        if not self.check1:
+            self.toggle_check1()
+        width=self.width1set.text()
+        self.Rigol.pulseWidth(width,1)
 
     def on_width2_clicked(self):
-        if not dry_run:
-            if not self.check2:
-                self.toggle_check2()
-            width=self.width2set.text()
-            self.Rigol.pulseWidth(width,2)
-        else:
-            print(dry_run)
+        if not self.check2:
+            self.toggle_check2()
+        width=self.width2set.text()
+        self.Rigol.pulseWidth(width,2)
 
     def check_impedance(self):
         if self.check1:
@@ -1131,7 +1048,7 @@ class WidgetGallery(QDialog):
             self.amp1disp.display(f"{lst1[2]:.2f}")
             self.os1disp.display(f"{lst1[3]:.2f}")
             self.delay1disp.display(f"{lst1[4]:.2f}")
-        
+
         if self.check2: # if we want to check channel 2 as well
             lst2=self.Rigol.queryApply(2)
             self.freq2disp.display(lst2[1])
@@ -1218,18 +1135,4 @@ class WidgetGallery(QDialog):
             self.check2=True
             self.check2disp.setText("Channel 2 In Use")
             self.check2disp.setStyleSheet("background:limegreen")
-
-    def closeEvent(self, event): # turn off outputs upon closing gui
-        self.Rigol.outputOff(1,wait=0)
-        self.Rigol.outputOff(2,wait=0)
-        self.Rigol.close()
-        event.accept()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle('Fusion')
-    wg=WidgetGallery()
-    wg.show()
-    sys.exit(app.exec_())
 

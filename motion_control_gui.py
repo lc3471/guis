@@ -1,7 +1,7 @@
 # author: Laurel Carpenter
 # date 07/22/2021
 
-from dcps import ESP301
+from dcps import NewportESP301
 
 from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
@@ -27,10 +27,10 @@ class WidgetGallery(QDialog):
         self.qTimer.setInterval(1000)
         self.qTimer.start()
 
-        #self.qTimer.timeout.connect(self.check_motor1)
-        #self.qTimer.timeout.connect(self.check_motor2)
-        #self.qTimer.timeout.connect(self.check_pos1)
-        #self.qTimer.timeout.connect(self.check_pos2)
+        self.qTimer.timeout.connect(self.check_motor1)
+        self.qTimer.timeout.connect(self.check_motor2)
+        self.qTimer.timeout.connect(self.check_pos1)
+        self.qTimer.timeout.connect(self.check_pos2)
 
         mainLayout=QGridLayout()
         self.create_control_box()
@@ -39,7 +39,7 @@ class WidgetGallery(QDialog):
 
 
     def open_newport(self,path):
-        self.newport=ESP301(path)
+        self.newport=NewportESP301(path)
         self.newport.open_inst()
 
     def create_control_box(self):

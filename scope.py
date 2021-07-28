@@ -1,5 +1,6 @@
-# author: Laurel Carpenter
-# date: 7/15/2021
+# Laurel Carpenter
+# 07/28/2021
+# adapted from scope_gui.py
 
 from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
@@ -9,35 +10,20 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QFormLayout, QWidget, QMessageBox)
-import visa
-import math
 
-import sys
-import argparse
-
-import struct
-import functools
+from dcps import SiglentSDS1202XE
 
 from datetime import datetime
-from time import sleep
-import numpy as np
-
 import pandas as pd
 
-chr = functools.partial(struct.pack,'B')
-windows_system = False
-
-fname='test'
-
-class WidgetGallery(QDialog):
+class Scope(QDialog):
     def __init__(self, parent=None):
-        super(WidgetGallery, self).__init__(parent)
-        
-        self.wait=0.5        
-        self.open_siglent('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
+        super(Scope, self).__init__(parent)
+
+        self.Siglent=SiglentSDS1202XE('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
 
         self.qTimer=QTimer()
-        self.qTimer.setInterval(1000)
+        self.qTimer.setInterval(500)
         self.qTimer.start()
         self.qTimer.timeout.connect(self.check_acq)
         self.qTimer.timeout.connect(self.check_vdiv)
@@ -81,7 +67,7 @@ class WidgetGallery(QDialog):
         self.stats_box=QGroupBox()
         self.stats_layout=QGridLayout()
         self.stats_box.setLayout(self.stats_layout)
-        
+
         tdiv_label=QLabel("Time Division [s]")
         self.tdiv_disp=QLCDNumber()
         self.tdiv=self.query_tdiv()
@@ -134,18 +120,14 @@ class WidgetGallery(QDialog):
         self.acq_button=QPushButton("Toggle Acquisition")
         self.acq_button.clicked.connect(self.toggle_acq)
 
-        try:
-            self.wasAcq=self.isAcq()
-        except:
-            self.wasAcq=True
-
+        self.wasAcq=self.Siglent.isAcq()
         if self.wasAcq:
             self.acq_disp.setText("Running")
             self.acq_disp.setStyleSheet("background:limegreen")
         else:
             self.acq_disp.setText("Stopped")
             self.acq_disp.setStyleSheet("background:red")
-        
+
         self.stats_layout.addWidget(acq_label,0,0,1,2)
         self.stats_layout.addWidget(self.acq_disp,1,0,1,2)
         self.stats_layout.addWidget(self.acq_button,2,0,1,2)
@@ -166,16 +148,10 @@ class WidgetGallery(QDialog):
         self.stats_layout.addWidget(self.wfsuBox,13,0,1,2)
 
     def on_tdivbutton_clicked(self):
-        try:
-            self.set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
-        except:
-            pass
+        self.Siglent..set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
 
     def on_trdlbutton_clicked(self):
-        try:
-            self.set_trdl(float(self.trdledit.text()),str(self.trdlunit.currentText()))
-        except:
-            pass
+        self.Siglent.set_trdl(float(self.trdledit.text()),str(self.trdlunit.currentText()))
 
     def create_wfsuBox(self):
         self.wfsuBox=QGroupBox("Waveform Setup")
@@ -184,15 +160,15 @@ class WidgetGallery(QDialog):
 
         self.FPedit=QLineEdit()
         self.FPbutton=QPushButton("Set First Point")
-        self.FPbutton.clicked.connect(lambda: self.waveformSetup(FP=self.FPedit.text()))
+        self.FPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(FP=self.FPedit.text()))
 
         self.NPedit=QLineEdit()
         self.NPbutton=QPushButton("Set Number of Points")
-        self.NPbutton.clicked.connect(lambda: self.waveformSetup(NP=self.NPedit.text()))
+        self.NPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(NP=self.NPedit.text()))
 
         self.SPedit=QLineEdit()
         self.SPbutton=QPushButton("Set Sparsing")
-        self.SPbutton.clicked.connect(lambda: self.waveformSetup(SP=self.SPedit.text()))
+        self.SPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(SP=self.SPedit.text()))
 
         self.FPedit.setText('0')
         self.NPedit.setText('all')
@@ -248,10 +224,7 @@ class WidgetGallery(QDialog):
         self.vdiv1box.setLayout(self.vdiv1layout)
 
         self.vdiv1disp=QLCDNumber()
-        try:
-            self.vdiv1=self.query_vdiv(1)
-        except:
-            self.vdiv1=1
+        self.vdiv1=self.query_vdiv(1)
         self.vdiv1disp.display(self.vdiv1)
 
         self.vdiv1menu=QComboBox()
@@ -283,10 +256,7 @@ class WidgetGallery(QDialog):
         self.vdiv2box.setLayout(self.vdiv2layout)
 
         self.vdiv2disp=QLCDNumber()
-        try:
-            self.vdiv2=self.query_vdiv(2)
-        except:
-            self.vdiv2=1
+        self.vdiv2=self.query_vdiv(2)
         self.vdiv2disp.display(self.vdiv2)
 
         self.vdiv2menu=QComboBox()
@@ -313,16 +283,10 @@ class WidgetGallery(QDialog):
         self.vdiv2layout.addWidget(self.vdiv2button,2,0,1,2)
 
     def on_vdiv1button_clicked(self):
-        try:
-            self.set_vdiv(1,str(self.vdiv1menu.currentText()))
-        except:
-            pass
+        self.Siglent.set_vdiv(1,str(self.vdiv1menu.currentText()))
 
     def on_vdiv2button_clicked(self):
-        try:
-            self.set_vdiv(2,str(self.vdiv2menu.currentText()))
-        except:
-            pass
+        self.Siglent.set_vdiv(2,str(self.vdiv2menu.currentText()))
 
     def create_ofst1box(self):
         self.ofst1box=QGroupBox("Voltage Offset [V]")
@@ -330,10 +294,7 @@ class WidgetGallery(QDialog):
         self.ofst1box.setLayout(self.ofst1layout)
 
         self.ofst1disp=QLCDNumber()
-        try:
-            self.ofst1=self.query_ofst(1)
-        except:
-            self.ofst1=0
+        self.ofst1=self.query_ofst(1)
         self.ofst1disp.display(self.ofst1)
         self.ofst1edit=QLineEdit()
 
@@ -358,10 +319,7 @@ class WidgetGallery(QDialog):
         self.ofst2box.setLayout(self.ofst2layout)
 
         self.ofst2disp=QLCDNumber()
-        try:
-            self.ofst2=self.query_ofst(2)
-        except:
-            self.ofst2=0
+        self.ofst2=self.query_ofst(2)
         self.ofst2disp.display(self.ofst2)
         self.ofst2edit=QLineEdit()
 
@@ -381,64 +339,33 @@ class WidgetGallery(QDialog):
         self.ofst2layout.addWidget(self.ofst2button,2,0,1,2)
 
     def on_ofst1button_clicked(self):
-        try:
-            self.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
-        except:
-            pass
-
+        self.Siglent.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
+    
     def on_ofst2button_clicked(self):
-        try:
-            self.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
-        except:
-            pass
-
-    def wf_to_list(self,channel):
-        wf=self.getWaveform(channel).pointsVector()
-        v=[]
-        t=[]
-        for i in range(len(wf)):
-            point=wf[i]
-            t.append(float(point.x()))
-            v.append(float(point.y()))
-        return t,v
+        self.Siglent.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
 
     def on_save1button_clicked(self):
-        reps=1000
-        t,v=self.wf_to_list(1)
-        df=pd.DataFrame(data=[v],columns=t)
-        wait(0.001)
-
-        for i in range(reps):
-            t,v=self.wf_to_list(1)
-            df2=pd.DataFrame(data=[v],columns=t)
-            df=df.append(df2,ignore_index=True)
-            wait(0.001)
-
-        df=df.transpose()
-        print(df.head())
-        wdir='/home/ctalab/data/CTA/testing/waveform/07_28_2021/'
-        df.to_csv(wdir+fname+'.csv')
-        print('done')
+        t,v=self.Siglent.getWaveform(1)
 
     def on_save2button_clicked(self):
-        wf=self.wf_to_array(2)
-        self.save_data(wf)
+        t,v=self.Siglent.getWaveform(2)
 
-    """def save_data(self,wf):
+    def save_data(self,wf):
         dt=datetime.now()
         #fname="%4d-%02d-%02d_%02d:%02d:%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
         path=("/media/ctalab/DATA/CTA/testing/waveform/test.txt")
         f=open(path,'w')
         f.write(str(wf))
-        f.close()"""
-
+        f.close()
 
     def create_chart1(self):
         self.chart1=QChart()
-        try:
-            self.series1=self.getWaveform(1)
-        except:
-            self.series1=QSplineSeries()
+        
+        v,t=self.Siglent.getWaveform(1)
+        self.series1=QSplineSeries()
+        for i in range(len(v)):
+            self.series1.append(t[i],v[i])
+
         self.chart1.addSeries(self.series1)
         self.chart1.legend().hide()
 
@@ -449,7 +376,7 @@ class WidgetGallery(QDialog):
         self.Xaxis1.setMinorTickCount(1)
         self.chart1.addAxis(self.Xaxis1,Qt.AlignBottom)
         self.series1.attachAxis(self.Xaxis1)
-        
+
         self.Yaxis1=QValueAxis()
         self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
         self.Yaxis1.setTickCount(5)
@@ -463,10 +390,12 @@ class WidgetGallery(QDialog):
 
     def create_chart2(self):
         self.chart2=QChart()
-        try:
-            self.series2=self.getWaveform(2)
-        except:
-            self.series2=QSplineSeries()
+        
+        v,t=self.Siglent.getWaveform(2)
+        self.series2=QSplineSeries()
+        for i in range(len(v)):
+            self.series2.append(t[i],v[i])
+
         self.chart2.addSeries(self.series2)
         self.chart2.legend().hide()
 
@@ -490,312 +419,92 @@ class WidgetGallery(QDialog):
         self.chart2.resize(600,400)
 
     def check_waveform(self):
-        try:
-            if self.channel1:
-                if self.getWaveform(1) != self.series1:
-                    self.chart1.removeSeries(self.series1)
-                    self.series1=self.getWaveform(1)
-                    self.chart1.addSeries(self.series1)
-                    self.series1.attachAxis(self.Xaxis1)
-                    self.series1.attachAxis(self.Yaxis1)
+        if self.channel1:
+            v,t=self.Siglent.getWaveform(1)
+            self.series1new=QSplineSeries()
+            for i in range(len(v)):
+                self.series1new.append(t[i],v[i])
 
-            if self.channel2:
-                if self.getWaveform(2) != self.series2:
-                    self.chart2.removeSeries(self.series2)
-                    self.series2=self.getWaveform(2)
-                    self.chart2.addSeries(self.series2)
-                    self.series2.attachAxis(self.Xaxis2)
-                    self.series2.attachAxis(self.Yaxis2)
-        except:
-            pass
+            if self.series1new != self.series1:
+                self.chart1.removeSeries(self.series1)
+                self.series1=self.series1new
+                self.chart1.addSeries(self.series1)
+                self.series1.attachAxis(self.Xaxis1)
+                self.series1.attachAxis(self.Yaxis1)
+
+        if self.channel2:
+            v,t=self.Siglent.getWaveform(2)
+            self.series2new=QSplineSeries()
+            for i in range(len(v)):
+                self.series2new.append(t[i],v[i])
+
+            if self.series2new != self.series2:
+                self.chart2.removeSeries(self.series2)
+                self.series2=self.series2new
+                self.chart2.addSeries(self.series2)
+                self.series2.attachAxis(self.Xaxis2)
+                self.series2.attachAxis(self.Yaxis2)
 
     def toggle_acq(self):
-        try:
-            if self.isAcq():
-                self.stopAcq()
-            else:
-                self.startAcq()
-        except:
-            pass
+        if self.Siglent.isAcq():
+            self.Siglent.stopAcq()
+        else:
+            self.Siglent.startAcq()
 
     def check_acq(self):
-        try:
-            if self.wasAcq != self.isAcq():
-                self.wasAcq=self.isAcq()
-                if self.wasAcq:
-                    self.acq_disp.setText("Running")
-                    self.acq_disp.setStyleSheet("background:limegreen")
-                else:
-                    self.acq_disp.setText("Stopped")
-                    self.acq_disp.setStyleSheet("background:red")
-        except:
-            pass
+        if self.wasAcq != self.Siglent.isAcq():
+            self.wasAcq=self.Siglent.isAcq()
+            if self.wasAcq:
+                self.acq_disp.setText("Running")
+                self.acq_disp.setStyleSheet("background:limegreen")
+            else:
+                self.acq_disp.setText("Stopped")
+                self.acq_disp.setStyleSheet("background:red")
 
     def check_vdiv(self):
-        try:
-            if self.channel1:
-                if self.vdiv1 != self.query_vdiv(1):
-                    self.vdiv1 = self.query_vdiv(1)
-                    self.vdiv1disp.display(self.vdiv1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+        if self.channel1:
+            if self.vdiv1 != self.Siglent.query_vdiv(1):
+                self.vdiv1 = self.Siglent.query_vdiv(1)
+                self.vdiv1disp.display(self.vdiv1)
+                self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
 
-            if self.channel2:
-                if self.vdiv2 != self.query_vdiv(2):
-                    self.vdiv2 = self.query_vdiv(2)
-                    self.vdiv2disp.display(self.vdiv2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
-        except:
-            pass
+        if self.channel2:
+            if self.vdiv2 != self.Siglent.query_vdiv(2):
+                self.vdiv2 = self.Siglent.query_vdiv(2)
+                self.vdiv2disp.display(self.vdiv2)
+                self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
 
     def check_ofst(self):
-        try:
-            if self.channel1:
-                if self.ofst1 != self.query_ofst(1):
-                    self.ofst1 = self.query_ofst(1)
-                    self.ofst1disp.display(self.ofst1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+        if self.channel1:
+            if self.ofst1 != self.Siglent.query_ofst(1):
+                self.ofst1 = self.Siglent.query_ofst(1)
+                self.ofst1disp.display(self.ofst1)
+                self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
 
-            if self.channel2:
-                if self.ofst2 != self.query_ofst(2):
-                    self.ofst2 = self.query_ofst(2)
-                    self.ofst2disp.display(self.ofst2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
-        except:
-            pass
+        if self.channel2:
+            if self.ofst2 != self.Siglent.query_ofst(2):
+                self.ofst2 = self.Siglent.query_ofst(2)
+                self.ofst2disp.display(self.ofst2)
+                self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
 
     def check_tdiv(self):
-        try:
-            if self.tdiv != self.query_tdiv():
-                self.tdiv = self.query_tdiv()
-                self.tdiv_disp.display(self.tdiv)
-                if self.channel1:
-                    self.Xaxis1.setRange(-6*self.tdiv,6*self.tdiv)
-                    self.series1.attachAxis(self.Xaxis1)
-                if self.channel2:
-                    self.Xaxis2.setRange(-6*self.tdiv,6*self.tdiv)
-                    self.series2.attachAxis(self.Xaxis2)
-        except:
-            pass
+        if self.tdiv != self.Siglent.query_tdiv():
+            self.tdiv = self.Siglent.query_tdiv()
+            self.tdiv_disp.display(self.tdiv)
+            if self.channel1:
+                self.Xaxis1.setRange(-6*self.tdiv,6*self.tdiv)
+                self.series1.attachAxis(self.Xaxis1)
+            if self.channel2:
+                self.Xaxis2.setRange(-6*self.tdiv,6*self.tdiv)
+                self.series2.attachAxis(self.Xaxis2)
 
     def check_sara(self):
-        try:
-            if self.sara != self.query_sara():
-                self.sara = self.query_sara()
-                self.sara_disp.display(self.sara)
-        except:
-            pass
+        if self.sara != self.Siglent.query_sara():
+            self.sara = self.Siglent.query_sara()
+            self.sara_disp.display(self.sara)
 
     def check_trdl(self):
-        try:
-            if self.trdl != self.query_trdl():
-                self.trdl=self.query_trdl()
-                self.trdl_disp.display(self.trdl)
-        except:
-            pass
-
-    ## reading/writing functions
-    def open_siglent(self, path, wait=None):
-        rm=visa.ResourceManager()
-        self.Siglent=rm.open_resource(path)
-
-        self.Siglent.write("CHDR OFF") # format responses
-        self.Siglent.timeout=30000 # 30 seconds, default is 2, not long enough
-        self.Siglent.chunk_size=20*1024**2 # 20 MB, default is 20 KB, too small
-
-        try:
-            if self.Siglent.query("MSIZ?") != "14M\n":
-                self.Siglent.write("MSIZ 14M")
-        except:
-            pass
-
-        if wait is None:
-            wait=self.wait
-
-        sleep(wait)
-
-    def query_ofst(self,channel):
-        ret=self.Siglent.query(("C{}:OFST?").format(channel))
-        return float(ret)
-    
-    def query_vdiv(self,channel):
-        ret=self.Siglent.query(("C{}:VDIV?").format(channel))
-        return float(ret)
-
-    def query_tdiv(self):
-        ret=self.Siglent.query("TDIV?")
-        return float(ret)
-
-    def query_sara(self):
-        ret=self.Siglent.query("SARA?")
-        return float(ret)
-
-    def query_trdl(self):
-        ret=self.Siglent.query("TRDL?")
-        return float(ret)
-    
-    def set_vdiv(self,channel,vdiv,wait=None):
-        # possible VDIV:
-        # 500 UV (micro)
-        # 1,2,5,10,20,50,100,200,500 MV
-        # 1,2,5,10 V
-        if vdiv=="500 \u03BCV":
-            vdiv="500UV" # change unicode mu to letter u
-        vdiv.replace(' ','') # get rid of space in '10 mV'
-        vdiv=vdiv.upper() # set unit uppercase
-        self.Siglent.write(("C{}:VDIV {}").format(channel,vdiv))
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def set_ofst(self,channel,ofst,unit,wait=None):
-        # can be anything in UV/MV/V ?
-        if unit=="\u03BCV":
-            unit="UV" # change unicode mu to letter u
-        unit=unit.upper() # set unit uppercase
-        self.Siglent.write(("C{}:OFST {}{}").format(channel,ofst,unit))
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def set_tdiv(self,tdiv,unit,wait=None):
-        # possible TDIV:
-        # 1,2,5,10,20,50,100,200,500 NS
-        # 1,2,5,10,20,50,100,200,500 US (micro)
-        # 1,2,5,10,20,50,100,200,500 MS
-        # 1,2,5,10,20,50,100 S
-        if unit=="\u03BCs": 
-            unit="US" # change unicode mu to letter u
-        elif (unit=='s') and ((tdiv=='200') or (tdiv=='500')):
-            tdiv='100' # can't set tdiv to 200 or 500 S, so set to max (100 S)
-        unit=unit.upper() # set unit uppercase
-        self.Siglent.write(("TDIV {}{}").format(tdiv,unit))
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def set_trdl(self,trdl,unit,wait=None):
-        if unit=='ns':
-            mult=10**-9
-        elif unit=='\u03BCs':
-            mult=10**-6
-            unit="US"
-        elif unit=='ms':
-            mult=10**-3
-        else:
-            mult=1
-
-        if (trdl*mult)<=(self.tdiv*10):
-            unit=unit.upper()
-            self.Siglent.write(("TRDL {}{}").format(trdl,unit))
-            if wait is None:
-                wait=self.wait
-            sleep(wait)
-
-    def getWaveform(self,channel):
-        self.Siglent.write(("C{}:WF? DAT2").format(channel))
-        ret=list(self.Siglent.read_raw())[15:]
-        ret.pop() # remove last two items (message end bits)
-        ret.pop()
-        ret.pop(0)
-        vdiv=self.query_vdiv(channel)
-        ofst=self.query_ofst(channel)
-
-        vlist=[]
-
-        for v in ret:
-            if v>127:
-                v=v-255
-            v=(v/25*vdiv-ofst)
-            vlist.append(v)
-
-        points=QSplineSeries()
-
-        tdiv=self.tdiv
-        sara=self.sara
-
-        for i in range(len(vlist)):
-            t=-tdiv*7+i/sara
-            points.append(t,vlist[i])
-            
-        return points
-        
-
-    def waveformSetup(self, FP=None, NP=None, SP=None, wait=None):
-        #FP: First point
-        # address of first data point to be sent
-        # index starts at 0
-        #NP: Number of points
-        # how many points should be transmitted
-        # 0: send all
-        # 1: send 1
-        # 500: send <= 500
-        #SP: Sparsing
-        # interval between data points
-        # 0: send all
-        # 1: send all
-        # 2: send every other
-        # 5: send every 5th
-        
-        if FP is None:
-            FP=self.querySetup()[0]
-        if NP is None:
-            NP=self.querySetup()[1]
-        elif NP.lower()=='all':
-            NP='0'
-        if SP is None:
-            SP=self.querySetup()[2]
-
-        self.Siglent.write(("WFSU? FP,{},NP,{},SP,{}").format(FP,NP,SP))
-        # default: FP=0,NP=1000,SP=4
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def querySetup(self):
-        ret=self.Siglent.query("WFSU?")
-        ret=ret.strip("'")
-        lst=ret.split(',')
-        return [float(lst[1]),float(lst[3]),float(lst[5])]
-        # format: [FP,NP,SP]
-
-    def startAcq(self,wait=None):
-        self.Siglent.write("TRMD AUTO")
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def stopAcq(self,wait=None):
-        self.Siglent.write("STOP")
-        if wait is None:
-            wait=self.wait
-        sleep(wait)
-
-    def isAcq(self):
-        ret=self.Siglent.query("TRMD?")
-        if ret=="STOP\n":
-            return False
-        else:
-            return True
-
-    def closeEvent(self,event):
-        #self.stopAcq(wait=0)
-        self.Siglent.close()
-        event.accept()
-
-    def wf_to_array(self,channel):
-        wf=self.getWaveform(channel).pointsVector()
-        for i in range(len(wf)):
-            point=wf[i]
-            wf[i]=[float(point.x()),float(point.y())]
-        wf=np.array(wf)
-        print(wf)
-        return wf
-
-
-if __name__=="__main__":
-    app=QApplication(sys.argv)
-    app.setStyle('Fusion')
-    wg=WidgetGallery()
-    wg.show()
-    sys.exit(app.exec_())
+        if self.trdl != self.Siglent.query_trdl():
+            self.trdl=self.Siglent.query_trdl()
+            self.trdl_disp.display(self.trdl)
 
