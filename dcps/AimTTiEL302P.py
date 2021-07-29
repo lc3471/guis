@@ -10,10 +10,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,7 +21,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
- 
+
 #-------------------------------------------------------------------------------
 #  Control a Aim TTi PL-P Series DC Power Supplies with PyVISA
 #-------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ try:
     from . import SCPI
 except ValueError:
     from SCPI import SCPI
-    
+
 from time import sleep
 import pyvisa as visa
 import re
@@ -54,7 +54,7 @@ class AimTTiEL302P(SCPI):
     def __init__(self, resource, wait=1.0):
         """Init the class with the instruments resource string
 
-        resource - resource string or VISA descriptor, like TCPIP0::192.168.1.100::9221::SOCKET 
+        resource - resource string or VISA descriptor, like TCPIP0::192.168.1.100::9221::SOCKET
         wait     - float that gives the default number of seconds to wait after sending each command
 
         NOTE: According to the documentation for this power supply, the
@@ -73,7 +73,7 @@ class AimTTiEL302P(SCPI):
         """Set the power supply to LOCAL mode where front panel keys work again
         """
         self._instWrite('LOCAL')
-    
+
     def setRemote(self):
         """Set the power supply to REMOTE mode where it is controlled via VISA
         """
@@ -81,17 +81,17 @@ class AimTTiEL302P(SCPI):
         # supply does switch to REMOTE automatically. So send any
         # command to do it.
         self._instWrite('*WAI')
-    
+
     def setRemoteLock(self):
         """Set the power supply to REMOTE Lock mode where it is
            controlled via VISA & front panel is locked out
         """
         self._instWrite('IFLOCK')
-        
+
     def isOutputOn(self, channel=None):
         str_ = 'OUT?'
         ret = self._instQuery(str_)
-        
+
         if (ret=="OUT ON\r"):
             return True
         else:
@@ -102,45 +102,46 @@ class AimTTiEL302P(SCPI):
             return True
         else:
             return False
-    
+
     def outputOn(self, channel=None, wait=None):
-        
+
         if wait is None:
             wait = self._wait
-            
+
         str_ = 'ON'
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
-    
+
     def outputOff(self, channel=None, wait=None):
-        
+
         if wait is None:
             wait = self._wait
-            
+
         str_ = 'OFF'
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
-    
-    
+
+
     def setVoltage(self, voltage, channel=None, wait=None):
-        
+
         if wait is None:
             wait = self._wait
         str_ = 'V {}'.format(voltage)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
-        
+
     def setCurrent(self, current, channel=None, wait=None):
 
         if wait is None:
             wait = self._wait
-            
+
         str_= 'I {}'.format(current)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
 
-        
+
     def queryVoltage(self, channel=None):
+        # desired voltage
         str_ = 'V?'
         ret = self._instQuery(str_)
         # Pull out words from response
@@ -151,8 +152,9 @@ class AimTTiEL302P(SCPI):
             # break out the words from the response
             words = match.groups()
             return float(words[0])
-    
+
     def queryCurrent(self, channel=None):
+        # desired current
         str_ = 'I?'
         ret = self._instQuery(str_)
         # Pull out words from response
@@ -163,8 +165,9 @@ class AimTTiEL302P(SCPI):
             # break out the words from the response
             words = match.groups()
             return float(words[0])
-    
+
     def measureVoltage(self, channel=None):
+        # actual voltage
         str_ = 'VO?'
         ret = self._instQuery(str_)
         # Pull out words from response
@@ -175,8 +178,9 @@ class AimTTiEL302P(SCPI):
             # break out the words from the response
             words = match.groups()
             return float(words[0])
-    
+
     def measureCurrent(self, channel=None):
+        #actual current
         str_= 'IO?'
         ret = self._instQuery(str_)
         # Pull out words from response
@@ -187,4 +191,3 @@ class AimTTiEL302P(SCPI):
             # break out the words from the response
             words = match.groups()
             return float(words[0])
-

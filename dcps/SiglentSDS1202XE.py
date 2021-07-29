@@ -5,11 +5,17 @@ import visa
 from time import sleep
 
 
+"""
+class to control a Siglent 1000 series oscilloscope
+uses SCPI commands but does not inherit SCPI class because... ???
+something about chunk_size and timeout I think
+"""
+
 class SiglentSDS1202XE(object):
     def __init__(self,resource,wait=0.5,max_channels=2,
             read_termination='',write_termination='/r/n',
             chunk_size=20*1024**2,timeout=30000):
-
+            # chunk size and timeout must be larger in order to read waveforms
 
         self.resource=resource
         self.wait=wait
@@ -18,8 +24,10 @@ class SiglentSDS1202XE(object):
         self.write_termination=write_termination
         self.chunk_size=chunk_size
         self.timeout=timeout
-        
+
         self.open_inst()
+        self.chdr_off()
+        self.msiz_14m()
 
     def open_inst(self):
         rm=visa.ResourceManager()
@@ -30,33 +38,41 @@ class SiglentSDS1202XE(object):
 
     def chdr_off(self):
         self.inst.write("CHDR OFF")
+        # tells machine to send shortened responses
 
 
     def msiz_14m(self):
+        # sets memory size to 14 M
         if self.inst.query("MSIZ?") != "14M\n":
             self.inst.write("MSIZ 14M")
 
     def query_ofst(self,channel):
+        # query voltage offset
         ret=self.inst.query(("C{}:OFST?").format(channel))
         return float(ret)
 
     def query_vdiv(self,channel):
+        # query voltage divisions
         ret=self.inst.query(("C{}:VDIV?").format(channel))
         return float(ret)
 
     def query_tdiv(self):
+        # query time divisions
         ret=self.inst.query("TDIV?")
         return float(ret)
 
     def query_sara(self):
+        # query sampling rate
         ret=self.inst.query("SARA?")
         return float(ret)
 
     def query_trdl(self):
+        # query trigger delay (time offset)
         ret=self.inst.query("TRDL?")
         return float(ret)
 
     def set_vdiv(self,channel,vdiv,wait=None):
+        # set voltage divisions
         # possible VDIV:
         # 500 UV (micro)
         # 1,2,5,10,20,50,100,200,500 MV
@@ -71,6 +87,7 @@ class SiglentSDS1202XE(object):
         sleep(wait)
 
     def set_ofst(self,channel,ofst,unit,wait=None):
+        # set voltage offset
         # can be anything in UV/MV/V ?
         if unit=="\u03BCV":
             unit="UV" # change unicode mu to letter u
@@ -81,6 +98,7 @@ class SiglentSDS1202XE(object):
         sleep(wait)
 
     def set_tdiv(self,tdiv,unit,wait=None):
+        # set time divisions
         # possible TDIV:
         # 1,2,5,10,20,50,100,200,500 NS
         # 1,2,5,10,20,50,100,200,500 US (micro)
@@ -97,6 +115,8 @@ class SiglentSDS1202XE(object):
         sleep(wait)
 
     def set_trdl(self,trdl,unit,wait=None):
+        # set trigger delay
+        # can be anything smaller than tdiv?
         if unit=='ns':
             mult=10**-9
         elif unit=='\u03BCs':
@@ -115,16 +135,17 @@ class SiglentSDS1202XE(object):
             sleep(wait)
 
     def getWaveform(self,channel):
+        # return waveform data
         self.inst.write(("C{}:WF? DAT2").format(channel))
         ret=list(self.inst.read_raw())[15:]
         ret.pop() # remove last two items (message end bits)
         ret.pop()
-        ret.pop(0)
+        ret.pop(0) # remove message start bit
         vdiv=self.query_vdiv(channel)
         ofst=self.query_ofst(channel)
 
         vlist=[]
-
+        # calculate correct voltages
         for v in ret:
             if v>127:
                 v=v-255
@@ -135,7 +156,7 @@ class SiglentSDS1202XE(object):
         sara=self.query_sara()
 
         tlist=[]
-
+        # calculate correct times
         for i in range(len(vlist)):
             t=-tdiv*7+i/sara
             tlist.append(t)
@@ -181,21 +202,23 @@ class SiglentSDS1202XE(object):
         # format: [FP,NP,SP]
 
     def startAcq(self,wait=None):
+        # start signal acquisition
         self.inst.write("TRMD AUTO")
         if wait is None:
             wait=self.wait
         sleep(wait)
 
     def stopAcq(self,wait=None):
+        # stop signal acquisition
         self.inst.write("STOP")
         if wait is None:
             wait=self.wait
         sleep(wait)
 
     def isAcq(self):
+        # ask if currently acquiring signal 
         ret=self.inst.query("TRMD?")
         if ret=="STOP\n":
             return False
         else:
             return True
-

@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Laurel Carpenter
+# Date: July something, 2021
 
 try:
     from . import SCPI
 except ValueError:
     from SCPI import SCPI
-    
+
 from time import sleep
 import pyvisa as visa
 import re
 from math import inf
+
+"""
+class to control Rigol DG 5000 series function generator
+inherits SCPI as machine uses SCPI commands
+"""
 
 class RigolDG5000(SCPI):
     def __init__(self, resource, wait=1.0):
@@ -23,19 +29,19 @@ class RigolDG5000(SCPI):
     def isOutputOn(self, channel=None):
         _str = (':OUTP{}?').format(channel)
         ret = self._instQuery(_str)
-        
+
         if (ret=="ON\n\n"):
             return True
         else:
             return False
-    
+
     def outputOn(self, channel=None, wait=None):
         if wait is None:
             wait = self._wait
         str_ = (':OUTP{} ON').format(channel)
         self._instWrite(str_)
         sleep(wait)             # give some time for PS to respond
-    
+
     def outputOff(self, channel=None, wait=None):
         if wait is None:
             wait = self._wait
@@ -56,14 +62,15 @@ class RigolDG5000(SCPI):
         str_=(":SOUR{}:APPL:PULS {},{},{},{}").format(channel,freq,amp,offset,delay)
         self._instWrite(str_)
         sleep(wait)
-    
+
     def queryApply(self, channel=None):
+        # ask what kind of pulse was applied
         str_=(":SOUR{}:APPL?").format(channel)
         ret=self._instQuery(str_)
         ret=ret[:(len(ret)-2)] # remove '\n' from end of string
         ret=ret.strip('"') # remove quotes from beginning and end of string
         lst=ret.split(",") # split string into variables
-        
+
         for i in range(1,len(lst)): # range(1,len(lst)) s.t. not converting waveform name to float
             if lst[i]=="DEF":
                 lst[i]=0
@@ -73,16 +80,19 @@ class RigolDG5000(SCPI):
         return lst
 
     def dutyCycle(self, pct=None, channel=None, wait=None, Min=False, Max=False):
-        if wait is None: 
+        # set duty cycle
+        # optional params min and max, to set min or max duty cycle
+        # else, set by percentage
+        if wait is None:
             wait=self._wait
 
         if Min: # set to minimum duty cycle
-            str_=(":SOUR{}:PULS:DCYC MIN").format(channel) 
+            str_=(":SOUR{}:PULS:DCYC MIN").format(channel)
         elif Max: # set to maximum duty cycle
             str_=(":SOUR{}:PULS:DCYC MAX").format(channel)
         else: # set duty cycle as percentage
             str_=(":SOUR{}:PULS:DCYC {}").format(channel, pct)
-        
+
         self._instWrite(str_)
         sleep(wait)
 
@@ -95,6 +105,7 @@ class RigolDG5000(SCPI):
         return ret
 
     def pulseDelay(self, delay=None, channel=None, wait=None, Min=False, Max=False):
+        # set pulse delay
         if wait is None:
             wait=self._wait
 
@@ -145,6 +156,7 @@ class RigolDG5000(SCPI):
             return False
 
     def transitionLeading(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+        # set transition leading
         if wait is None:
             wait=self._wait
 
@@ -167,6 +179,7 @@ class RigolDG5000(SCPI):
         return ret
 
     def transitionTrailing(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+        # set transition trailing
         if wait is None:
             wait=self._wait
 
@@ -189,6 +202,7 @@ class RigolDG5000(SCPI):
         return ret
 
     def pulseWidth(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+        # set pulse width
         if wait is None:
             wait=self._wait
 
@@ -211,6 +225,8 @@ class RigolDG5000(SCPI):
         return ret
 
     def setImpedance(self, ohms=None, channel=None, wait=None, inf=False, Min=False, Max=False):
+        # set impedance
+        # optional params for min or max, also for infinite (high Z)
         if wait is None:
             wait=self._wait
 
@@ -225,7 +241,7 @@ class RigolDG5000(SCPI):
 
         self._instWrite(str_)
         sleep(wait)
-        
+
     def queryImpedance(self, channel=None):
         # ask for impedance in ohms
         str_=(":OUTP{}:IMP?").format(channel)
@@ -240,7 +256,7 @@ class RigolDG5000(SCPI):
         ret=self._instQuery(str_)
         ret=ret.strip('"')
         ret=float(ret)
-        
+
         if ret==inf:
             return True
         else:
@@ -323,14 +339,14 @@ class RigolDG5000(SCPI):
         str_=(":OUTP{}:SYNC:POL?").format(channel)
         ret=self._instQuery(str_)
         ret=ret.strip('"')
-        
+
         if ret=="POS\n":
             return True
-        else: 
+        else:
             return False
 
     def saverOn(self, wait=None):
-        # screensaver
+        # enable screensaver
         if wait is None:
             wait=self._wait
         str_=":DISP:SAV ON"
@@ -338,7 +354,7 @@ class RigolDG5000(SCPI):
         sleep(wait)
 
     def saverOff(self, wait=None):
-        # screensaver
+        # disable screensaver
         if wait is None:
             wait=self._wait
         str_=":DISP:SAV OFF"
@@ -346,7 +362,7 @@ class RigolDG5000(SCPI):
         sleep(wait)
 
     def isSaverOn(self):
-        # screensaver
+        # ask if screensaver enabled
         str_=":DISP:SAV?"
         ret=self._instQuery(str_)
         ret=ret.strip('"')
@@ -357,7 +373,7 @@ class RigolDG5000(SCPI):
             return False
 
     def saverImm(self, wait=None):
-        # screensaver
+        # immediately enter screensaver state
         if wait is None:
             wait=self._wait
         str_=":DISP:SAV:IMM"

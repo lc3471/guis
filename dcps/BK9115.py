@@ -1,3 +1,6 @@
+""" Not used in GUIs"""
+
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
@@ -10,10 +13,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,7 +24,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
- 
+
 #-------------------------------------------------------------------------------
 #  Control a BK Precision 9115 and related DC Power Supplies with PyVISA
 #-------------------------------------------------------------------------------
@@ -35,7 +38,7 @@ try:
     from . import SCPI
 except:
     from SCPI import SCPI
-    
+
 from time import sleep
 import pyvisa as visa
 
@@ -50,7 +53,7 @@ class BK9115(SCPI):
         """
         super(BK9115, self).__init__(resource, max_chan=1, wait=wait, cmd_prefix='', read_termination = None, write_termination = '\r\n')
 
-    
+
 
 if __name__ == '__main__':
     import argparse
@@ -68,27 +71,27 @@ if __name__ == '__main__':
 
     # IMPORTANT: 9115 requires Remote to be set or else commands are ignored
     bkps.setRemote()
-    
+
     ## set Remote Lock On
     #bkps.setRemoteLock()
-    
+
     bkps.beeperOff()
 
     # normally would get channel from args.chan
     chan = args.chan
     # BK Precision 9115 has a single channel, so force chan to be 1
     chan = 1
-    
+
     if not bkps.isOutputOn(chan):
         bkps.outputOn()
-        
+
     print('Ch. {} Settings: {:6.4f} V  {:6.4f} A'.
               format(chan, bkps.queryVoltage(),
                          bkps.queryCurrent()))
 
     voltageSave = bkps.queryVoltage()
     ovpSave = bkps.queryVoltageProtection()
-    
+
     print('{:6.4f} V'.format(bkps.measureVoltage()))
     print('{:6.4f} A'.format(bkps.measureCurrent()))
 
@@ -108,7 +111,7 @@ if __name__ == '__main__':
     bkps.setVoltageProtection(11.3, delay=0.010)
     print('B: {:6.4f} V'.format(bkps.queryVoltageProtection()))
     bkps.voltageProtectionOn()
-    
+
     bkps.setVoltage(voltageSave)
     bkps.setVoltageProtection(ovpSave)
 
@@ -123,5 +126,5 @@ if __name__ == '__main__':
 
     ## return to LOCAL mode
     bkps.setLocal()
-    
+
     bkps.close()
