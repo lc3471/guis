@@ -11,26 +11,30 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QVBoxLayout, QFormLayout, QWidget, QMessageBox)
 
 from dcps import AimTTiCPX400DP
-
+from pyvisa.errors import VisaIOError
+from serial.serialutil import SerialException
 
 class PSU2(QDialog):
     def __init__(self, parent=None):
         super(PSU2, self).__init__(parent)
 
-        # start a timer to measure the PSU I and V every 0.5 s
-        self.qTimer = QTimer()
-        self.qTimer.setInterval(500)
-        self.qTimer.start()
-
         mainLayout = QGridLayout()
 
-        self.createPSU2Box()
+        try:
+            self.createPSU2Box()
+            self.isConnected=True
+        except VisaIOError as err:
+            self.PSU2Box=QLabel("PSU 2 Not Connected: "+str(err))
+            self.isConnected=False
+        except SerialException as err:
+            self.PSU2Box=QLabel("PSU 2 Not Connected: "+str(err))
+            self.isConnected=False
 
         self.setLayout(mainLayout)
         mainLayout.addWidget(self.PSU2Box,0,0)
 
     def createPSU2Box(self):
-        self.aim2=AimTTiCPX400DP('ASRL/dev/ttyACM1::INSTR')
+        self.aim2=AimTTiCPX400DP('ASRL/dev/ttyACM0::INSTR')
         self.aim2.open()
 
         self.was_VTracking=self.aim2.isVTracking()
@@ -51,6 +55,11 @@ class PSU2(QDialog):
         self.Imeas2 = self.aim2.measureCurrent(2)
         self.O2_was_on=self.aim2.isOutputOn(2)
 
+        # start a timer to measure the PSU I and V every 0.5 s
+        self.qTimer = QTimer()
+        self.qTimer.setInterval(500)
+        self.qTimer.start()
+
         self.qTimer.timeout.connect(self.check_VTracking)
         self.qTimer.timeout.connect(self.query_voltage1)
         self.qTimer.timeout.connect(self.query_current1)
@@ -63,9 +72,9 @@ class PSU2(QDialog):
         self.qTimer.timeout.connect(self.measure_current2)
         self.qTimer.timeout.connect(self.check_output2)
 
-        self.PSU2Box = QGroupBox("Control Double PSU")
+        self.PSU2Box = QGroupBox("Double PSU")
         self.PSU2Box.setObjectName("psu2")
-        self.PSU2Box.setStyleSheet("QGroupBox#psu2 { font-weight: bold; }")
+        #self.PSU2Box.setStyleSheet("QGroupBox#psu2 { font-weight: bold; }")
         self.PSU2Layout = QGridLayout()
         self.PSU2Box.setLayout(self.PSU2Layout)
 
@@ -167,82 +176,74 @@ class PSU2(QDialog):
 
 
     def create_Vbox1(self):
-        self.Vbox1 = QGroupBox("Voltage")
+        self.Vbox1 = QGroupBox("Voltage [V]")
         self.Vlayout1 = QVBoxLayout()
         self.Vbox1.setLayout(self.Vlayout1)
 
-        self.PSU2v1Prompt = QLabel("PSU 1 Voltage [V]")
         self.PSU2v1Set = QLineEdit()
         self.setVButton1 = QPushButton("Set Voltage")
         self.setVButton1.clicked.connect(self.on_vbutton1_clicked)
         self.V1setNum=QLabel()
         self.V1set=self.aim2.queryVoltage(1)
-        self.V1setNum.setText("V Set Value: "+f"{self.V1set:.2f}"+" V")
+        self.V1setNum.setText("V Set Value:\n"+f"{self.V1set:.2f}"+" V")
         self.V1setNum.setFrameShape(QFrame.StyledPanel)
 
         self.Vlayout1.addWidget(self.VmeasNum1)
-        self.Vlayout1.addWidget(self.PSU2v1Prompt)
         self.Vlayout1.addWidget(self.V1setNum)
         self.Vlayout1.addWidget(self.PSU2v1Set)
         self.Vlayout1.addWidget(self.setVButton1)
 
     def create_Vbox2(self):
-        self.Vbox2 = QGroupBox("Voltage")
+        self.Vbox2 = QGroupBox("Voltage [V]")
         self.Vlayout2 = QVBoxLayout()
         self.Vbox2.setLayout(self.Vlayout2)
 
-        self.PSU2v2Prompt = QLabel("PSU 2 Voltage [V]")
         self.PSU2v2Set = QLineEdit()
         self.setVButton2 = QPushButton("Set Voltage")
         self.setVButton2.clicked.connect(self.on_vbutton2_clicked)
         self.V2setNum=QLabel()
         self.V2set=self.aim2.queryVoltage(2)
-        self.V2setNum.setText("V Set Value: "+f"{self.V2set:.2f}"+" V")
+        self.V2setNum.setText("V Set Value:\n"+f"{self.V2set:.2f}"+" V")
         self.V2setNum.setFrameShape(QFrame.StyledPanel)
 
         self.Vlayout2.addWidget(self.VmeasNum2)
-        self.Vlayout2.addWidget(self.PSU2v2Prompt)
         self.Vlayout2.addWidget(self.V2setNum)
         self.Vlayout2.addWidget(self.PSU2v2Set)
         self.Vlayout2.addWidget(self.setVButton2)
 
     def create_Ibox1(self):
-        self.Ibox1 = QGroupBox("Current")
+        self.Ibox1 = QGroupBox("Current [A]")
         self.Ilayout1 = QVBoxLayout()
         self.Ibox1.setLayout(self.Ilayout1)
 
-        self.PSU2i1Prompt = QLabel("PSU 1 Current [A]")
         self.PSU2i1Set = QLineEdit()
         self.I1setNum=QLabel()
         self.I1set=self.aim2.queryCurrent(1)
-        self.I1setNum.setText("I Set Value: "+f"{self.I1set:.2f}"+" A")
+        self.I1setNum.setText("I Set Value:\n"+f"{self.I1set:.2f}"+" A")
         self.I1setNum.setFrameShape(QFrame.StyledPanel)
         self.setIButton1 = QPushButton("Set Current")
         self.setIButton1.clicked.connect(self.on_ibutton1_clicked)
 
         self.Ilayout1.addWidget(self.ImeasNum1)
-        self.Ilayout1.addWidget(self.PSU2i1Prompt)
         self.Ilayout1.addWidget(self.I1setNum)
         self.Ilayout1.addWidget(self.PSU2i1Set)
         self.Ilayout1.addWidget(self.setIButton1)
 
 
     def create_Ibox2(self):
-        self.Ibox2 = QGroupBox("Current")
+        self.Ibox2 = QGroupBox("Current [A]")
         self.Ilayout2 = QVBoxLayout()
         self.Ibox2.setLayout(self.Ilayout2)
 
-        self.PSU2i2Prompt = QLabel("PSU 2 Current [A]")
         self.PSU2i2Set = QLineEdit()
         self.I2setNum=QLabel()
         self.I2set=self.aim2.queryCurrent(2)
-        self.I2setNum.setText("I Set Value: "+f"{self.I2set:.2f}"+" A")
+        self.I2setNum.setText("I Set Value:\n"+f"{self.I2set:.2f}"+" A")
         self.I2setNum.setFrameShape(QFrame.StyledPanel)
         self.setIButton2 = QPushButton("Set Current")
         self.setIButton2.clicked.connect(self.on_ibutton2_clicked)
 
         self.Ilayout2.addWidget(self.ImeasNum2)
-        self.Ilayout2.addWidget(self.PSU2i2Prompt)
         self.Ilayout2.addWidget(self.I2setNum)
         self.Ilayout2.addWidget(self.PSU2i2Set)
         self.Ilayout2.addWidget(self.setIButton2)

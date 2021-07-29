@@ -13,33 +13,43 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
 
 from dcps import SiglentSDS1202XE
 
+from pyvisa.errors import VisaIOError
+from serial.serialutil import SerialException
+
+from time import sleep
 from datetime import datetime
 import pandas as pd
+
+fname='test'
 
 class Scope(QDialog):
     def __init__(self, parent=None):
         super(Scope, self).__init__(parent)
 
-        self.Siglent=SiglentSDS1202XE('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
-
-        self.qTimer=QTimer()
-        self.qTimer.setInterval(500)
-        self.qTimer.start()
-        self.qTimer.timeout.connect(self.check_acq)
-        self.qTimer.timeout.connect(self.check_vdiv)
-        self.qTimer.timeout.connect(self.check_ofst)
-        self.qTimer.timeout.connect(self.check_tdiv)
-        self.qTimer.timeout.connect(self.check_sara)
-        self.qTimer.timeout.connect(self.check_waveform)
-
         mainLayout=QGridLayout()
 
-        self.create_scope_box()
+        try:
+            self.create_scope_box()
+            self.isConnected=True
+        except VisaIOError as err:
+            self.scope_box=QLabel("Oscilloscope Not Connected: "+str(err))
+            self.isConnected=False
+        except SerialException as err:
+            self.scope_box=QLabel("Oscilloscope Not Connected: "+str(err))
+            self.isConnected=False
+        except ValueError as err:
+            self.scope_box=QLabel("Oscilloscope Not Connected: "+str(err))
+            self.isConnected=False
+
         mainLayout.addWidget(self.scope_box,0,0)
 
         self.setLayout(mainLayout)
 
     def create_scope_box(self):
+
+        self.Siglent=SiglentSDS1202XE('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
+        self.Siglent.chdr_off()
+
         self.scope_box=QGroupBox("Siglent Oscilloscope")
         self.scope_layout=QHBoxLayout()
         self.scope_box.setLayout(self.scope_layout)
@@ -49,19 +59,30 @@ class Scope(QDialog):
         self.create_stats_box()
         self.scope_layout.addWidget(self.stats_box)
 
-        try:
-            self.create_box1()
-            self.channel1=True
-            self.scope_layout.addWidget(self.box1)
-        except:
-            self.channel1=False
+        self.channel2=False
+
+        #try:
+        self.create_box1()
+        self.channel1=True
+        self.scope_layout.addWidget(self.box1)
+        #except:
+        #    pass
         """try:
             self.create_box2()
             self.channel2=True
             self.scope_layout.addWidget(self.box2)
         except:
-            self.channel2=False"""
-        self.channel2=False
+            pass"""
+
+        self.qTimer=QTimer()
+        self.qTimer.setInterval(1000)
+        self.qTimer.start()
+        self.qTimer.timeout.connect(self.check_acq)
+        self.qTimer.timeout.connect(self.check_vdiv)
+        self.qTimer.timeout.connect(self.check_ofst)
+        self.qTimer.timeout.connect(self.check_tdiv)
+        self.qTimer.timeout.connect(self.check_sara)
+        self.qTimer.timeout.connect(self.check_waveform)
 
     def create_stats_box(self):
         self.stats_box=QGroupBox()
@@ -70,15 +91,18 @@ class Scope(QDialog):
 
         tdiv_label=QLabel("Time Division [s]")
         self.tdiv_disp=QLCDNumber()
-        self.tdiv=self.query_tdiv()
+        self.tdiv=self.Siglent.query_tdiv()
+        sleep(0.001)
         self.tdiv_disp.display(self.tdiv)
         sara_label=QLabel("Sampling Rate [s]")
         self.sara_disp=QLCDNumber()
-        self.sara=self.query_sara()
+        self.sara=self.Siglent.query_sara()
+        sleep(0.001)
         self.sara_disp.display(self.sara)
         trdl_label=QLabel("Trigger Delay [s]")
         self.trdl_disp=QLCDNumber()
-        self.trdl=self.query_trdl()
+        self.trdl=self.Siglent.query_trdl()
+        sleep(0.001)
         self.trdl_disp.display(self.trdl)
 
         self.tdivmenu=QComboBox()
@@ -121,6 +145,7 @@ class Scope(QDialog):
         self.acq_button.clicked.connect(self.toggle_acq)
 
         self.wasAcq=self.Siglent.isAcq()
+        sleep(0.001)
         if self.wasAcq:
             self.acq_disp.setText("Running")
             self.acq_disp.setStyleSheet("background:limegreen")
@@ -148,10 +173,12 @@ class Scope(QDialog):
         self.stats_layout.addWidget(self.wfsuBox,13,0,1,2)
 
     def on_tdivbutton_clicked(self):
-        self.Siglent..set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
+        self.Siglent.set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
+        sleep(0.001)
 
     def on_trdlbutton_clicked(self):
         self.Siglent.set_trdl(float(self.trdledit.text()),str(self.trdlunit.currentText()))
+        sleep(0.001)
 
     def create_wfsuBox(self):
         self.wfsuBox=QGroupBox("Waveform Setup")
@@ -173,7 +200,7 @@ class Scope(QDialog):
         self.FPedit.setText('0')
         self.NPedit.setText('all')
         self.SPedit.setText('1')
-        self.waveformSetup(FP='0',NP='0',SP='1')
+        self.Siglent.waveformSetup(FP='0',NP='0',SP='1')
 
         self.wfsuLayout.addWidget(self.FPedit)
         self.wfsuLayout.addWidget(self.FPbutton)
@@ -224,7 +251,8 @@ class Scope(QDialog):
         self.vdiv1box.setLayout(self.vdiv1layout)
 
         self.vdiv1disp=QLCDNumber()
-        self.vdiv1=self.query_vdiv(1)
+        self.vdiv1=self.Siglent.query_vdiv(1)
+        sleep(0.001)
         self.vdiv1disp.display(self.vdiv1)
 
         self.vdiv1menu=QComboBox()
@@ -256,7 +284,8 @@ class Scope(QDialog):
         self.vdiv2box.setLayout(self.vdiv2layout)
 
         self.vdiv2disp=QLCDNumber()
-        self.vdiv2=self.query_vdiv(2)
+        self.vdiv2=self.Siglent.query_vdiv(2)
+        sleep(0.001)
         self.vdiv2disp.display(self.vdiv2)
 
         self.vdiv2menu=QComboBox()
@@ -283,10 +312,18 @@ class Scope(QDialog):
         self.vdiv2layout.addWidget(self.vdiv2button,2,0,1,2)
 
     def on_vdiv1button_clicked(self):
-        self.Siglent.set_vdiv(1,str(self.vdiv1menu.currentText()))
+        try:
+            self.Siglent.set_vdiv(1,str(self.vdiv1menu.currentText()))
+            sleep(0.001)
+        except:
+            pass
 
     def on_vdiv2button_clicked(self):
-        self.Siglent.set_vdiv(2,str(self.vdiv2menu.currentText()))
+        try:
+            self.Siglent.set_vdiv(2,str(self.vdiv2menu.currentText()))
+            sleep(0.001)
+        except:
+            pass
 
     def create_ofst1box(self):
         self.ofst1box=QGroupBox("Voltage Offset [V]")
@@ -294,7 +331,8 @@ class Scope(QDialog):
         self.ofst1box.setLayout(self.ofst1layout)
 
         self.ofst1disp=QLCDNumber()
-        self.ofst1=self.query_ofst(1)
+        self.ofst1=self.Siglent.query_ofst(1)
+        sleep(0.001)
         self.ofst1disp.display(self.ofst1)
         self.ofst1edit=QLineEdit()
 
@@ -319,7 +357,8 @@ class Scope(QDialog):
         self.ofst2box.setLayout(self.ofst2layout)
 
         self.ofst2disp=QLCDNumber()
-        self.ofst2=self.query_ofst(2)
+        self.ofst2=self.Siglent.query_ofst(2)
+        sleep(0.001)
         self.ofst2disp.display(self.ofst2)
         self.ofst2edit=QLineEdit()
 
@@ -339,29 +378,65 @@ class Scope(QDialog):
         self.ofst2layout.addWidget(self.ofst2button,2,0,1,2)
 
     def on_ofst1button_clicked(self):
-        self.Siglent.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
-    
+        try:
+            self.Siglent.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
+            sleep(0.001)
+        except:
+            pass
+
     def on_ofst2button_clicked(self):
-        self.Siglent.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
+        try:
+            self.Siglent.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
+            sleep(0.001)
+        except:
+            pass
 
     def on_save1button_clicked(self):
-        t,v=self.Siglent.getWaveform(1)
+        reps=1000
+        v,t=self.Siglent.getWaveform(1)
+        df=pd.DataFrame(data=[v],columns=t)
+        wait(0.001)
+
+        for i in range(reps):
+            try:
+                v,t=self.Siglent.getWaveform(1)
+                df2=pd.DataFrame(data=[v],columns=t)
+                df=df.append(df2,ignore_index=True)
+                wait(0.001)
+            except:
+                pass
+
+        df=df.transpose()
+        wdir='/home/ctalab/data/CTA/testing/waveform/07_28_2021/'
+        df.to_csv(wdir+fname+'1.csv')
+        print('done')
+
 
     def on_save2button_clicked(self):
-        t,v=self.Siglent.getWaveform(2)
+        reps=1000
+        v,t=self.Siglent.getWaveform(2)
+        df=pd.DataFrame(data=[v],columns=t)
+        wait(0.001)
 
-    def save_data(self,wf):
-        dt=datetime.now()
-        #fname="%4d-%02d-%02d_%02d:%02d:%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
-        path=("/media/ctalab/DATA/CTA/testing/waveform/test.txt")
-        f=open(path,'w')
-        f.write(str(wf))
-        f.close()
+        for i in range(reps):
+            try:
+                v,t=self.Siglent.getWaveform(2)
+                df2=pd.DataFrame(data=[v],columns=t)
+                df=df.append(df2,ignore_index=True)
+                wait(0.001)
+            except:
+                pass
+
+        df=df.transpose()
+        wdir='/home/ctalab/data/CTA/testing/waveform/07_28_2021/'
+        df.to_csv(wdir+fname+'2.csv')
+        print('done')
 
     def create_chart1(self):
         self.chart1=QChart()
         
         v,t=self.Siglent.getWaveform(1)
+        sleep(0.001)
         self.series1=QSplineSeries()
         for i in range(len(v)):
             self.series1.append(t[i],v[i])
@@ -392,6 +467,7 @@ class Scope(QDialog):
         self.chart2=QChart()
         
         v,t=self.Siglent.getWaveform(2)
+        sleep(0.001)
         self.series2=QSplineSeries()
         for i in range(len(v)):
             self.series2.append(t[i],v[i])
@@ -420,91 +496,145 @@ class Scope(QDialog):
 
     def check_waveform(self):
         if self.channel1:
-            v,t=self.Siglent.getWaveform(1)
-            self.series1new=QSplineSeries()
-            for i in range(len(v)):
-                self.series1new.append(t[i],v[i])
+            try:
+                v,t=self.Siglent.getWaveform(1)
+                sleep(0.001)
+                self.series1new=QSplineSeries()
+                for i in range(len(v)):
+                    self.series1new.append(t[i],v[i])
 
-            if self.series1new != self.series1:
-                self.chart1.removeSeries(self.series1)
-                self.series1=self.series1new
-                self.chart1.addSeries(self.series1)
-                self.series1.attachAxis(self.Xaxis1)
-                self.series1.attachAxis(self.Yaxis1)
+                if self.series1new != self.series1:
+                    self.chart1.removeSeries(self.series1)
+                    self.series1=self.series1new
+                    self.chart1.addSeries(self.series1)
+                    self.series1.attachAxis(self.Xaxis1)
+                    self.series1.attachAxis(self.Yaxis1)
+            except:
+                pass
 
         if self.channel2:
-            v,t=self.Siglent.getWaveform(2)
-            self.series2new=QSplineSeries()
-            for i in range(len(v)):
-                self.series2new.append(t[i],v[i])
+            try:
+                v,t=self.Siglent.getWaveform(2)
+                sleep(0.001)
+                self.series2new=QSplineSeries()
+                for i in range(len(v)):
+                    self.series2new.append(t[i],v[i])
 
-            if self.series2new != self.series2:
-                self.chart2.removeSeries(self.series2)
-                self.series2=self.series2new
-                self.chart2.addSeries(self.series2)
-                self.series2.attachAxis(self.Xaxis2)
-                self.series2.attachAxis(self.Yaxis2)
+                if self.series2new != self.series2:
+                    self.chart2.removeSeries(self.series2)
+                    self.series2=self.series2new
+                    self.chart2.addSeries(self.series2)
+                    self.series2.attachAxis(self.Xaxis2)
+                    self.series2.attachAxis(self.Yaxis2)
+            except:
+                pass
 
     def toggle_acq(self):
-        if self.Siglent.isAcq():
-            self.Siglent.stopAcq()
-        else:
-            self.Siglent.startAcq()
+        try:
+            if self.Siglent.isAcq():
+                sleep(0.001)
+                self.Siglent.stopAcq()
+            else:
+                sleep(0.001)
+                self.Siglent.startAcq()
+            sleep(0.001)
+        except:
+            pass
 
     def check_acq(self):
-        if self.wasAcq != self.Siglent.isAcq():
-            self.wasAcq=self.Siglent.isAcq()
-            if self.wasAcq:
-                self.acq_disp.setText("Running")
-                self.acq_disp.setStyleSheet("background:limegreen")
-            else:
-                self.acq_disp.setText("Stopped")
-                self.acq_disp.setStyleSheet("background:red")
+        try:
+            if self.wasAcq != self.Siglent.isAcq():
+                sleep(0.001)
+                self.wasAcq=self.Siglent.isAcq()
+                if self.wasAcq:
+                    self.acq_disp.setText("Running")
+                    self.acq_disp.setStyleSheet("background:limegreen")
+                else:
+                    self.acq_disp.setText("Stopped")
+                    self.acq_disp.setStyleSheet("background:red")
+            sleep(0.001)
+        except:
+            pass
 
     def check_vdiv(self):
         if self.channel1:
-            if self.vdiv1 != self.Siglent.query_vdiv(1):
-                self.vdiv1 = self.Siglent.query_vdiv(1)
-                self.vdiv1disp.display(self.vdiv1)
-                self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+            try:
+                if self.vdiv1 != self.Siglent.query_vdiv(1):
+                    sleep(0.001)
+                    self.vdiv1 = self.Siglent.query_vdiv(1)
+                    self.vdiv1disp.display(self.vdiv1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                sleep(0.001)
+            except:
+                pass
 
         if self.channel2:
-            if self.vdiv2 != self.Siglent.query_vdiv(2):
-                self.vdiv2 = self.Siglent.query_vdiv(2)
-                self.vdiv2disp.display(self.vdiv2)
-                self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+            try:
+                if self.vdiv2 != self.Siglent.query_vdiv(2):
+                    sleep(0.001)
+                    self.vdiv2 = self.Siglent.query_vdiv(2)
+                    self.vdiv2disp.display(self.vdiv2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                sleep(0.001)
+            except:
+                pass
 
     def check_ofst(self):
         if self.channel1:
-            if self.ofst1 != self.Siglent.query_ofst(1):
-                self.ofst1 = self.Siglent.query_ofst(1)
-                self.ofst1disp.display(self.ofst1)
-                self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+            try:
+                if self.ofst1 != self.Siglent.query_ofst(1):
+                    sleep(0.001)
+                    self.ofst1 = self.Siglent.query_ofst(1)
+                    self.ofst1disp.display(self.ofst1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                sleep(0.001)
+            except:
+                pass
 
         if self.channel2:
-            if self.ofst2 != self.Siglent.query_ofst(2):
-                self.ofst2 = self.Siglent.query_ofst(2)
-                self.ofst2disp.display(self.ofst2)
-                self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+            try:
+                if self.ofst2 != self.Siglent.query_ofst(2):
+                    sleep(0.001)
+                    self.ofst2 = self.Siglent.query_ofst(2)
+                    self.ofst2disp.display(self.ofst2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                sleep(0.001)
+            except:
+                pass
 
     def check_tdiv(self):
-        if self.tdiv != self.Siglent.query_tdiv():
-            self.tdiv = self.Siglent.query_tdiv()
-            self.tdiv_disp.display(self.tdiv)
-            if self.channel1:
-                self.Xaxis1.setRange(-6*self.tdiv,6*self.tdiv)
-                self.series1.attachAxis(self.Xaxis1)
-            if self.channel2:
-                self.Xaxis2.setRange(-6*self.tdiv,6*self.tdiv)
-                self.series2.attachAxis(self.Xaxis2)
+        try:
+            if self.tdiv != self.Siglent.query_tdiv():
+                sleep(0.001)
+                self.tdiv = self.Siglent.query_tdiv()
+                self.tdiv_disp.display(self.tdiv)
+                if self.channel1:
+                    self.Xaxis1.setRange(-6*self.tdiv,6*self.tdiv)
+                    self.series1.attachAxis(self.Xaxis1)
+                if self.channel2:
+                    self.Xaxis2.setRange(-6*self.tdiv,6*self.tdiv)
+                    self.series2.attachAxis(self.Xaxis2)
+            sleep(0.001)
+        except:
+            pass
 
     def check_sara(self):
-        if self.sara != self.Siglent.query_sara():
-            self.sara = self.Siglent.query_sara()
-            self.sara_disp.display(self.sara)
+        try:
+            if self.sara != self.Siglent.query_sara():
+                sleep(0.001)
+                self.sara = self.Siglent.query_sara()
+                self.sara_disp.display(self.sara)
+            sleep(0.001)
+        except:
+            pass
 
     def check_trdl(self):
-        if self.trdl != self.Siglent.query_trdl():
-            self.trdl=self.Siglent.query_trdl()
-            self.trdl_disp.display(self.trdl)
+        try:
+            if self.trdl != self.Siglent.query_trdl():
+                sleep(0.001)
+                self.trdl=self.Siglent.query_trdl()
+                self.trdl_disp.display(self.trdl)
+            sleep(0.001)
+        except:
+            pass
 

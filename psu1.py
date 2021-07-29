@@ -11,25 +11,30 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QVBoxLayout, QFormLayout, QWidget, QMessageBox)
 
 from dcps import AimTTiEL302P
-
+from pyvisa.errors import VisaIOError
+from serial.serialutil import SerialException
 
 class PSU1(QDialog):
     def __init__(self,parent=None):
         super(PSU1,self).__init__(parent)
 
-        self.qTimer = QTimer()
-        self.qTimer.setInterval(500)
-        self.qTimer.start()
-
         mainLayout = QGridLayout()
         
-        self.createPSU1Box()
+        try:
+            self.createPSU1Box()
+            self.isConnected=True
+        except VisaIOError as err:
+            self.PSU1Box=QLabel("PSU 1 Not Connected: "+str(err))
+            self.isConnected=False
+        except SerialException as err:
+            self.PSU1Box=QLabel("PSU 1 Not Connected: "+str(err))
+            self.isConnected=False
 
         self.setLayout(mainLayout)
         mainLayout.addWidget(self.PSU1Box,0,0)
 
     def createPSU1Box(self):
-        self.aim1 = AimTTiEL302P('ASRL/dev/psu1::INSTR')
+        self.aim1 = AimTTiEL302P('ASRL/dev/ttyACM1::INSTR')
         self.aim1.open()
 
         # create the displays for the measurements of I and V
@@ -43,6 +48,10 @@ class PSU1(QDialog):
 
         self.was_on_PSU1=self.aim1.isOutputOn()
 
+        self.qTimer = QTimer()
+        self.qTimer.setInterval(500)
+        self.qTimer.start()
+
         self.qTimer.timeout.connect(self.query_voltage_PSU1)
         self.qTimer.timeout.connect(self.query_current_PSU1)
         self.qTimer.timeout.connect(self.measure_voltage_PSU1)
@@ -50,9 +59,9 @@ class PSU1(QDialog):
         self.qTimer.timeout.connect(self.check_output_PSU1)
 
         ##Creates a PSU Box, calls functions to create the Vbox and Ibox that go inside.
-        self.PSU1Box = QGroupBox("Control Single PSU")
+        self.PSU1Box = QGroupBox("Single PSU")
         self.PSU1Box.setObjectName("psu1")
-        self.PSU1Box.setStyleSheet("QGroupBox#psu1 { font-weight: bold; }")
+        #self.PSU1Box.setStyleSheet("QGroupBox#psu1 { font-weight: bold; }")
 
         self.PSU1Layout = QGridLayout()
         self.PSU1Box.setLayout(self.PSU1Layout)
@@ -63,7 +72,7 @@ class PSU1(QDialog):
         self.PSU1Layout.addWidget(self.Ibox_PSU1,0,1)
 
         self.create_Obox_PSU1()
-        self.PSU1Layout.addWidget(self.Obox_PSU1,1,0,1,2)
+        self.PSU1Layout.addWidget(self.Obox_PSU1,0,2)
 
     def create_Vbox_PSU1(self):
         self.Vbox_PSU1 = QGroupBox("Voltage")

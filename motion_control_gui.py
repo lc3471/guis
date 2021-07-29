@@ -44,7 +44,7 @@ class WidgetGallery(QDialog):
 
     def create_control_box(self):
         self.control_box=QGroupBox()
-        self.control_layout=QHBoxLayout()
+        self.control_layout=QGridLayout()
         self.control_box.setLayout(self.control_layout)
 
         self.create_indef_box()
@@ -52,28 +52,18 @@ class WidgetGallery(QDialog):
         self.create_motion2box()
         self.create_side_box()
 
-        self.control_layout.addWidget(self.indef_box)
-        self.control_layout.addWidget(self.side_box)
-        self.control_layout.addWidget(self.motion1box)
-        self.control_layout.addWidget(self.motion2box)
+        self.control_layout.addWidget(self.indef_box,0,0)
+        self.control_layout.addWidget(self.side_box,1,0)
+        self.control_layout.addWidget(self.motion1box,0,1,2,1)
+        self.control_layout.addWidget(self.motion2box,0,3,2,1)
 
     def create_indef_box(self):
-        self.indef_box=QGroupBox("Move by increment")
+        self.indef_box=QGroupBox("Move by 1 unit")
         self.indef_layout=QGridLayout()
         self.indef_box.setLayout(self.indef_layout)
 
-        self.inclist=QComboBox()
-        self.inclist.addItem('1 mm')
-        self.inclist.addItem('100 \u03BCm')
-        self.inclist.addItem('10 \u03BCm')
-        self.inclist.addItem('1 \u03BCm')
-        self.inclist.addItem('100 nm')
-        self.inclist.addItem('10 nm')
-
-        
-
-        self.upbutton=QPushButton('^')
-        self.downbutton=QPushButton('v')
+        self.upbutton=QPushButton('\u039B')
+        self.downbutton=QPushButton('V')
         self.leftbutton=QPushButton('<')
         self.rightbutton=QPushButton('>')
 
@@ -95,11 +85,11 @@ class WidgetGallery(QDialog):
         self.abort_button=QPushButton("Abort Motion")
         self.abort_button.clicked.connect(self.on_abort_clicked)
 
-        self.abort_prog_button=QPushButton("Abort Program")
-        self.abort_prog_button.clicked.connect(self.newport.abort_prog)
+        #self.abort_prog_button=QPushButton("Abort Program")
+        #self.abort_prog_button.clicked.connect(self.newport.abort_prog)
 
-        self.quit_prog_button=QPushButton("Quit Programming Mode")
-        self.quit_prog_button.clicked.connect(self.newport.quit_prog_mode)
+        #self.quit_prog_button=QPushButton("Quit Programming Mode")
+        #self.quit_prog_button.clicked.connect(self.newport.quit_prog_mode)
 
         self.wait_label=QLabel("Set Wait Time [ms]")
         self.wait_edit=QLineEdit()
@@ -107,8 +97,8 @@ class WidgetGallery(QDialog):
         self.wait_button.clicked.connect(self.on_wait_clicked)
         
         self.unitmenu=QComboBox()
-        self.unitmenu.addItem('encoder count')
-        self.unitmenu.addItem('motor step')
+        #self.unitmenu.addItem('encoder count')
+        #self.unitmenu.addItem('motor step')
         self.unitmenu.addItem('mm')
         self.unitmenu.addItem('\u03BCm')
         self.unitmenu.addItem('in')
@@ -122,14 +112,14 @@ class WidgetGallery(QDialog):
 
         self.newport.set_units(1,'mm')
         self.newport.set_units(2,'mm')
-        self.unitlabel=QLabel('units: mm')
+        self.unitlabel=QLabel('Units: mm')
 
         self.unitbutton=QPushButton("Set Unit")
         self.unitbutton.clicked.connect(self.on_unit_clicked)
 
         self.side_layout.addWidget(self.abort_button)
-        self.side_layout.addWidget(self.abort_prog_button)
-        self.side_layout.addWidget(self.quit_prog_button)
+        #self.side_layout.addWidget(self.abort_prog_button)
+        #self.side_layout.addWidget(self.quit_prog_button)
         self.side_layout.addWidget(self.wait_label)
         self.side_layout.addWidget(self.wait_edit)
         self.side_layout.addWidget(self.wait_button)
@@ -367,12 +357,9 @@ class WidgetGallery(QDialog):
             pass
 
     def check_pos1(self):
-        try:
-            self.actpos1=self.newport.get_act_pos(1)
-            self.actpos1disp.display(self.actpos1)
-            self.newport.wait_time(wait)
-        except:
-            pass
+        self.actpos1=self.newport.get_act_pos(1)
+        self.actpos1disp.display(self.actpos1)
+        self.newport.wait_time(wait)
 
     def check_motor2(self):
         try:
@@ -452,48 +439,52 @@ class WidgetGallery(QDialog):
     def on_left_clicked(self):
         try:
             self.newport.move_rel_pos(1,-1)
+            self.newport.wait_motion_stop(1)
         except:
             pass
 
     def on_right_clicked(self):
         try:
-            self.newport.move_indef_pos(1)
+            self.newport.move_rel_pos(1,1)
+            self.newport.wait_motion_stop(1)
         except:
             pass
 
     def on_down_clicked(self):
         try:
-            self.newport.move_indef_neg(2)
+            self.newport.move_rel_pos(2,-1)
+            self.newport.wait_motion_stop(2)
         except:
             pass
 
     def on_up_clicked(self):
         try:
-            self.newport.move_indef_pos(2)
+            self.newport.move_rel_pos(2,1)
+            self.newport.wait_motion_stop(2)
         except:
             pass
 
     def on_abs1_clicked(self):
         pos=float(self.abs1edit.text())
-        if pos>self.llim1 and pos<self.rlim1:
-            try:
-                self.newport.move_abs_pos(1,pos)
-                self.newport.wait_time(wait)
-                self.despos1=pos
-                self.despos1disp.display(self.despos1)
-            except:
-                pass
+        #if pos>self.llim1 and pos<self.rlim1:
+        try:
+            self.newport.move_abs_pos(1,pos)
+            self.newport.wait_mottion_stop(1)
+            self.despos1=pos
+            self.despos1disp.display(self.despos1)
+        except:
+            pass
             
     def on_rel1_clicked(self):
         try:
             disp=float(self.rel1edit.text())
             pos=self.newport.get_abs_pos(1)
             self.newport.wait_time(wait)
-            if pos+disp>self.llim1 and pos+disp<self.rlim1:
-                self.newport.move_rel_pos(1,disp)
-                self.newport.wait_time(wait)
-                self.despos1=pos+disp
-                self.despos1disp.display(self.despos1)
+            #if pos+disp>self.llim1 and pos+disp<self.rlim1:
+            self.newport.move_rel_pos(1,disp)
+            self.newport.wait_motion_stop(1)
+            self.despos1=pos+disp
+            self.despos1disp.display(self.despos1)
         except:
             pass
 
@@ -507,25 +498,25 @@ class WidgetGallery(QDialog):
 
     def on_abs2_clicked(self):
         pos=float(self.abs2edit.text())
-        if pos>self.llim2 and pos<self.rlim2:
-            try:
-                self.newport.move_abs_pos(2,pos)
-                self.newport.wait_time(wait)
-                self.despos2=pos
-                self.despos2disp.display(self.despos2)
-            except:
-                pass
+        #if pos>self.llim2 and pos<self.rlim2:
+        try:
+            self.newport.move_abs_pos(2,pos)
+            self.newport.wait_motion_stop(2)
+            self.despos2=pos
+            self.despos2disp.display(self.despos2)
+        except:
+            pass
 
     def on_rel2_clicked(self):
         try:
             disp=float(self.rel2edit.text())
             pos=self.newport.get_abs_pos(2)
             self.newport.wait_time(wait)
-            if pos+disp>self.llim2 and pos+disp<self.rlim2:
-                self.newport.move_rel_pos(2,disp)
-                self.newport.wait_time(wait)
-                self.despos2=pos+disp
-                self.despos2disp.display(self.despos2)
+            #if pos+disp>self.llim2 and pos+disp<self.rlim2:
+            self.newport.move_rel_pos(2,disp)
+            self.newport.wait_motion_stop(2)
+            self.despos2=pos+disp
+            self.despos2disp.display(self.despos2)
         except:
             pass
 
@@ -536,6 +527,12 @@ class WidgetGallery(QDialog):
     def on_rl2_clicked(self):
         self.rlim2=float(self.rl2edit.text())
         self.rl2disp.display(self.rlim2)
+
+    def closeEvent(self,event):
+        self.newport.motor_off(1)
+        self.newport.motor_off(2)
+        self.newport.close_inst()
+        event.accept()
 
 
 if __name__=="__main__":

@@ -12,11 +12,44 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
 
 from dcps import RigolDG5000
 
+from pyvisa.errors import VisaIOError
+from serial.serialutil import SerialException
+
 from math import inf
 
 class Pulse(QDialog):
     def __init__(self, parent=None):
         super(Pulse, self).__init__(parent)
+
+        # start with a grid layout
+        mainLayout = QGridLayout()
+        
+        try:
+            self.create_pulser_box()
+            self.isConnected=True
+        except VisaIOError as err:
+            self.pulser_box=QLabel("Pulse Generator Not Connected: "+str(err))
+            self.isConnected=False
+        except SerialException as err:
+            self.pulser_box=QLabel("Pulse Generator Not Connected: "+str(err))
+            self.isConnected=False
+        except ValueError as err:
+            self.pulser_box=QLabel("Pulse Generator Not Connected: "+str(err))
+            self.isConnected=False
+
+        mainLayout.addWidget(self.pulser_box,0,0)
+
+        # set the layout of the widget gallery to mainLayout
+        self.setLayout(mainLayout)
+
+    def create_pulser_box(self):
+
+        # connect to pulser
+        self.Rigol=RigolDG5000('USB0::6833::1600::DG5T220100004\x00::0::INSTR')
+
+        self.pulser_box=QGroupBox("Rigol Pulser")
+        self.pulser_layout=QGridLayout()
+        self.pulser_box.setLayout(self.pulser_layout)
 
         # start a timer ??
         self.qTimer = QTimer()
@@ -39,27 +72,6 @@ class Pulse(QDialog):
         # whether to check channel 1 and channel 2 or not
         self.check1=True
         self.check2=False
-
-        # start with a grid layout
-        mainLayout = QGridLayout()
-
-        # build a PSUBox
-        #### some renaming in this function may be necessary as we build the GUI up to include other elements
-
-        self.create_pulser_box()
-        mainLayout.addWidget(self.pulser_box,0,0)
-
-        # set the layout of the widget gallery to mainLayout
-        self.setLayout(mainLayout)
-
-    def create_pulser_box(self):
-
-        # connect to pulser
-        self.Rigol=RigolDG5000('USB0::6833::1600::DG5T220100004\x00::0::INSTR')
-
-        self.pulser_box=QGroupBox("Rigol Pulser")
-        self.pulser_layout=QGridLayout()
-        self.pulser_box.setLayout(self.pulser_layout)
 
         # 2 boxes for 2 channels
         self.create_box1()
@@ -662,7 +674,7 @@ class Pulse(QDialog):
         self.lead1disp.setSegmentStyle(QLCDNumber.Flat)
 
         self.lead1set=QLineEdit() # input
-        self.lead1button=QPushButton("Set Transition Leading")
+        self.lead1button=QPushButton("Set Leading")
         self.lead1button.clicked.connect(self.on_lead1_clicked) # apply
 
         self.lead1layout.addWidget(self.lead1disp)
@@ -678,7 +690,7 @@ class Pulse(QDialog):
         self.trail1disp.setSegmentStyle(QLCDNumber.Flat)
 
         self.trail1set=QLineEdit() # input
-        self.trail1button=QPushButton("Set Transition Trailing")
+        self.trail1button=QPushButton("Set Trailing")
         self.trail1button.clicked.connect(self.on_trail1_clicked) # apply
 
         self.trail1layout.addWidget(self.trail1disp)
@@ -767,7 +779,7 @@ class Pulse(QDialog):
         self.lead2disp.setSegmentStyle(QLCDNumber.Flat)
 
         self.lead2set=QLineEdit() # input
-        self.lead2button=QPushButton("Set Transition Leading")
+        self.lead2button=QPushButton("Set Leading")
         self.lead2button.clicked.connect(self.on_lead2_clicked) # apply
 
         self.lead2layout.addWidget(self.lead2disp)
@@ -783,7 +795,7 @@ class Pulse(QDialog):
         self.trail2disp.setSegmentStyle(QLCDNumber.Flat)
 
         self.trail2set=QLineEdit() # input
-        self.trail2button=QPushButton("Set Transition Trailing")
+        self.trail2button=QPushButton("Set Trailing")
         self.trail2button.clicked.connect(self.on_trail2_clicked) # apply
 
         self.trail2layout.addWidget(self.trail2disp)

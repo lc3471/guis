@@ -415,23 +415,26 @@ class WidgetGallery(QDialog):
             wait(0.001)
 
         df=df.transpose()
-        print(df.head())
         wdir='/home/ctalab/data/CTA/testing/waveform/07_28_2021/'
-        df.to_csv(wdir+fname+'.csv')
+        df.to_csv(wdir+fname+'1.csv')
         print('done')
 
     def on_save2button_clicked(self):
-        wf=self.wf_to_array(2)
-        self.save_data(wf)
+        reps=1000
+        t,v=self.wf_to_list(2)
+        df=pd.DataFrame(data=[v],columns=t)
+        wait(0.001)
 
-    """def save_data(self,wf):
-        dt=datetime.now()
-        #fname="%4d-%02d-%02d_%02d:%02d:%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
-        path=("/media/ctalab/DATA/CTA/testing/waveform/test.txt")
-        f=open(path,'w')
-        f.write(str(wf))
-        f.close()"""
+        for i in range(reps):
+            t,v=self.wf_to_list(2)
+            df2=pd.DataFrame(data=[v],columns=t)
+            df=df.append(df2,ignore_index=True)
+            wait(0.001)
 
+        df=df.transpose()
+        wdir='/home/ctalab/data/CTA/testing/waveform/07_28_2021/'
+        df.to_csv(wdir+fname+'2.csv')
+        print('done')
 
     def create_chart1(self):
         self.chart1=QChart()
@@ -778,7 +781,6 @@ class WidgetGallery(QDialog):
             return True
 
     def closeEvent(self,event):
-        #self.stopAcq(wait=0)
         self.Siglent.close()
         event.accept()
 
