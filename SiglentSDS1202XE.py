@@ -18,6 +18,8 @@ class SiglentSDS1202XE(object):
         self.write_termination=write_termination
         self.chunk_size=chunk_size
         self.timeout=timeout
+        
+        self.open_inst()
 
     def open_inst(self):
         rm=visa.ResourceManager()
@@ -129,8 +131,8 @@ class SiglentSDS1202XE(object):
             v=(v/25*vdiv-ofst)
             vlist.append(v)
 
-        tdiv=self.tdiv
-        sara=self.sara
+        tdiv=self.query_tdiv()
+        sara=self.query_sara()
 
         tlist=[]
 

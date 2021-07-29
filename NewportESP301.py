@@ -2,7 +2,7 @@ import visa
 
 from time import sleep
 
-class ESP301(object):
+class NewportESP301(object):
     def __init__(self,resource,wait=0.5,max_axes=2,
             read_termination='',write_termination='/r/n',
             baud_rate=19200,timeout=2000):
