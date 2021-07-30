@@ -51,7 +51,8 @@ class RigolDG5000(SCPI):
 
 
     # pulse
-    def applyPulse(self, freq=1000, amp=5, offset=None, delay=None, channel=None, wait=None):
+    def applyPulse(self,freq=1000,amp=5,offset=None,delay=None,channel=None,
+        wait=None):
         # freq: unit=Hz, 1 micro-Hz to 50 MHz
         # amp: unit=Vpp
         # offset: unit=Vdc
@@ -59,7 +60,8 @@ class RigolDG5000(SCPI):
         if wait is None:
             wait=self._wait
 
-        str_=(":SOUR{}:APPL:PULS {},{},{},{}").format(channel,freq,amp,offset,delay)
+        str_=(":SOUR{}:APPL:PULS {},{},{},{}").format(channel,freq,amp,offset,
+            delay)
         self._instWrite(str_)
         sleep(wait)
 
@@ -71,7 +73,8 @@ class RigolDG5000(SCPI):
         ret=ret.strip('"') # remove quotes from beginning and end of string
         lst=ret.split(",") # split string into variables
 
-        for i in range(1,len(lst)): # range(1,len(lst)) s.t. not converting waveform name to float
+        for i in range(1,len(lst)):
+            # range(1,len(lst)) s.t. not converting waveform name to float
             if lst[i]=="DEF":
                 lst[i]=0
             else:
@@ -79,7 +82,7 @@ class RigolDG5000(SCPI):
         # lst='waveform name', 'freq', 'amp', 'offset', 'phase/delay'
         return lst
 
-    def dutyCycle(self, pct=None, channel=None, wait=None, Min=False, Max=False):
+    def dutyCycle(self,pct=None,channel=None,wait=None,Min=False,Max=False):
         # set duty cycle
         # optional params min and max, to set min or max duty cycle
         # else, set by percentage
@@ -104,7 +107,7 @@ class RigolDG5000(SCPI):
         ret=float(ret)
         return ret
 
-    def pulseDelay(self, delay=None, channel=None, wait=None, Min=False, Max=False):
+    def pulseDelay(self,delay=None,channel=None,wait=None,Min=False,Max=False):
         # set pulse delay
         if wait is None:
             wait=self._wait
@@ -155,7 +158,8 @@ class RigolDG5000(SCPI):
         else:
             return False
 
-    def transitionLeading(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+    def transitionLeading(self,seconds=None,channel=None,wait=None,Min=False,
+        Max=False):
         # set transition leading
         if wait is None:
             wait=self._wait
@@ -178,7 +182,8 @@ class RigolDG5000(SCPI):
         ret=float(ret)
         return ret
 
-    def transitionTrailing(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+    def transitionTrailing(self,seconds=None,channel=None,wait=None,Min=False,
+        Max=False):
         # set transition trailing
         if wait is None:
             wait=self._wait
@@ -201,7 +206,8 @@ class RigolDG5000(SCPI):
         ret=float(ret)
         return ret
 
-    def pulseWidth(self, seconds=None, channel=None, wait=None, Min=False, Max=False):
+    def pulseWidth(self,seconds=None,channel=None,wait=None,Min=False,
+        Max=False):
         # set pulse width
         if wait is None:
             wait=self._wait
@@ -224,7 +230,8 @@ class RigolDG5000(SCPI):
         ret=float(ret)
         return ret
 
-    def setImpedance(self, ohms=None, channel=None, wait=None, inf=False, Min=False, Max=False):
+    def setImpedance(self,ohms=None,channel=None,wait=None,inf=False,Min=False,
+        Max=False):
         # set impedance
         # optional params for min or max, also for infinite (high Z)
         if wait is None:

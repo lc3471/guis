@@ -4,11 +4,9 @@
 
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 
 from dcps import AimTTiEL302P
 from pyvisa.errors import VisaIOError
@@ -19,7 +17,7 @@ class PSU1(QDialog):
         super(PSU1,self).__init__(parent)
 
         mainLayout = QGridLayout()
-        
+
         try:
             self.createPSU1Box()
             self.isConnected=True
@@ -146,7 +144,8 @@ class PSU1(QDialog):
             self.aim1.setVoltage(set_voltage)
         else:
             alert = QMessageBox()
-            alert.setText("You must turn off output before changing the voltage")
+            alert.setText("You must turn off output before changing",
+                "the voltage")
             alert.exec_()
 
     def on_ibutton_PSU1_clicked(self):
@@ -158,7 +157,8 @@ class PSU1(QDialog):
             self.aim1.setCurrent(set_current)
         else:
             alert = QMessageBox()
-            alert.setText("You must turn off output before changing the current")
+            alert.setText("You must turn off output before changing",
+                "the current")
             alert.exec_()
 
     def toggle_output_PSU1(self):
@@ -176,7 +176,9 @@ class PSU1(QDialog):
         self.ImeasNumber.display(f"{self.Imeas:.2f}")
 
     def check_output_PSU1(self):
-        if self.was_on_PSU1 != self.aim1.isOutputOn(): ## asking if anything has changed since last 0.5s, so we don't have to keep reprinting text
+        if self.was_on_PSU1 != self.aim1.isOutputOn():
+            ## asking if anything has changed since last 0.5s,
+            ## so we don't have to keep reprinting text
             self.was_on_PSU1=self.aim1.isOutputOn()
             if self.aim1.isOutputOn():
                 self.Odisplay_PSU1.setText("Output is On")
@@ -194,4 +196,3 @@ class PSU1(QDialog):
         if self.aim1.queryCurrent() != self.Iset:
             self.Iset=self.aim1.queryCurrent()
             self.IsetNumber.setText("I Set Value: "+f"{self.Iset:.2f}"+" A")
-

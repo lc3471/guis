@@ -1,16 +1,36 @@
 # author: Laurel Carpenter
 # date 07/22/2021
 
+"""
+Troubleshooting:
+-motion controller cannot be found by visa:
+    first make sure you're actually connected by using the 'lsusb' command.
+    if the instrument is missing, it's likely a problem with your cord.
+    are you trying to connect via IEEE-488 (i.e. USB type b)?
+    for some reason we couldn't get this to work. try connecting via RS-232C
+    (i.e. the bigger connection that you sort of have to screw in).
+-motion controller connected but not accepting commands, queries time out:
+    if you are connected via RS-232C, make sure baud rate is set to 19200
+    (should be specified in NewportESP301 module).
+    if you somehow miraculously connected via IEEE-488, the baud rate has to be
+    921600, which seems insane?? I would advise against doing that, but maybe
+    you know more about this than me and you think it's fine, so knock yourself
+    out.
+-GUI does not update displays when they are changed:
+    the machine gets stressed out if you query it too much, which is why this
+    code is loaded with try/except clauses.
+-GUI crashes:
+    turn the machine off and then on again. try not to send too many commands
+    too often.
+"""
+
 from dcps import NewportESP301
 
-from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 
 import sys
 from time import sleep
@@ -22,9 +42,9 @@ class WidgetGallery(QDialog):
         super(WidgetGallery,self).__init__(parent)
 
         self.open_newport('ASRL/dev/ttyUSB0::INSTR')
-        
+
         self.qTimer=QTimer()
-        self.qTimer.setInterval(1000)
+        self.qTimer.setInterval(1000) # check every second
         self.qTimer.start()
 
         self.qTimer.timeout.connect(self.check_motor1)
@@ -62,7 +82,7 @@ class WidgetGallery(QDialog):
         self.indef_layout=QGridLayout()
         self.indef_box.setLayout(self.indef_layout)
 
-        self.upbutton=QPushButton('\u039B')
+        self.upbutton=QPushButton('\u039B') # unicode capital lambda
         self.downbutton=QPushButton('V')
         self.leftbutton=QPushButton('<')
         self.rightbutton=QPushButton('>')
@@ -95,7 +115,7 @@ class WidgetGallery(QDialog):
         self.wait_edit=QLineEdit()
         self.wait_button=QPushButton("Wait")
         self.wait_button.clicked.connect(self.on_wait_clicked)
-        
+
         self.unitmenu=QComboBox()
         #self.unitmenu.addItem('encoder count')
         #self.unitmenu.addItem('motor step')
@@ -178,7 +198,7 @@ class WidgetGallery(QDialog):
 
         self.stop1button=QPushButton("Stop Motion")
         self.stop1button.clicked.connect(lambda: self.newport.stop_motion(1))
-        
+
         self.indef1layout.addWidget(self.leftbutton,0,0)
         self.indef1layout.addWidget(self.rightbutton,0,1)
         self.indef1layout.addWidget(self.stop1button,1,0,1,2)"""
@@ -401,7 +421,7 @@ class WidgetGallery(QDialog):
                 self.newport.motor_off(1)
                 self.motor1disp.setText("Motor is Off")
                 self.motor1disp.setStyleSheet('background:red')
-            else: 
+            else:
                 self.newport.wait_time(wait)
                 self.newport.motor_on(1)
                 self.motor1disp.setText("Motor is On")
@@ -474,7 +494,7 @@ class WidgetGallery(QDialog):
             self.despos1disp.display(self.despos1)
         except:
             pass
-            
+
     def on_rel1_clicked(self):
         try:
             disp=float(self.rel1edit.text())
@@ -541,4 +561,3 @@ if __name__=="__main__":
     wg=WidgetGallery()
     wg.show()
     sys.exit(app.exec_())
-

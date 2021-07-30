@@ -4,11 +4,9 @@
 
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 
 from dcps import RigolDG5000
 
@@ -23,7 +21,7 @@ class Pulse(QDialog):
 
         # start with a grid layout
         mainLayout = QGridLayout()
-        
+
         try:
             self.create_pulser_box()
             self.isConnected=True
@@ -87,7 +85,8 @@ class Pulse(QDialog):
 
         self.check1button=QPushButton("Toggle Using Channel 1")
         self.check1button.clicked.connect(self.toggle_check1)
-        self.check1disp=QLabel("Channel 1 In Use") # display whether communicating w channel 1
+        self.check1disp=QLabel("Channel 1 In Use")
+        # display whether communicating w channel 1
         self.check1disp.setAlignment(Qt.AlignCenter)
         self.check1disp.setFrameShape(QFrame.StyledPanel)
         self.check1disp.setStyleSheet("background:limegreen")
@@ -111,7 +110,8 @@ class Pulse(QDialog):
 
         self.check2button=QPushButton("Toggle Using Channel 2")
         self.check2button.clicked.connect(self.toggle_check2)
-        self.check2disp=QLabel("Channel 2 Not In Use") # display whether communicating w channel 2
+        self.check2disp=QLabel("Channel 2 Not In Use")
+        # display whether communicating w channel 2
         self.check2disp.setAlignment(Qt.AlignCenter)
         self.check2disp.setFrameShape(QFrame.StyledPanel)
         self.check2disp.setStyleSheet("background:red")
@@ -170,7 +170,8 @@ class Pulse(QDialog):
         self.outLayout1=QVBoxLayout()
         self.outBox1.setLayout(self.outLayout1)
 
-        self.Obutton1=QPushButton("Toggle Output") # click button to change output
+        self.Obutton1=QPushButton("Toggle Output")
+        # click button to change output
         self.Obutton1.clicked.connect(lambda: self.toggle_output(1))
 
         self.Odisplay1=QLabel() # display on or off
@@ -198,7 +199,8 @@ class Pulse(QDialog):
         self.outLayout2=QVBoxLayout()
         self.outBox2.setLayout(self.outLayout2)
 
-        self.Obutton2=QPushButton("Toggle Output") # click button to change output
+        self.Obutton2=QPushButton("Toggle Output")
+        # click button to change output
         self.Obutton2.clicked.connect(lambda: self.toggle_output(2))
 
         self.Odisplay2=QLabel() # display on or off
@@ -333,7 +335,8 @@ class Pulse(QDialog):
         self.syncPol1layout=QVBoxLayout()
         self.syncPolBox1.setLayout(self.syncPol1layout)
 
-        self.syncPolButton1=QPushButton("Toggle Sync Polarity") # set sync polarity pos/neg
+        self.syncPolButton1=QPushButton("Toggle Sync Polarity")
+        # set sync polarity pos/neg
         self.syncPolButton1.clicked.connect(lambda: self.toggle_syncPol(1))
 
         self.syncPolDisplay1=QLabel()
@@ -387,7 +390,8 @@ class Pulse(QDialog):
         self.syncPolBox2.setLayout(self.syncPol2layout)
 
         self.syncPolButton2=QPushButton("Toggle Sync Polarity")
-        self.syncPolButton2.clicked.connect(lambda: self.toggle_syncPol(2)) # pos/neg
+        self.syncPolButton2.clicked.connect(lambda: self.toggle_syncPol(2))
+        # pos/neg
 
         self.syncPolDisplay2=QLabel()
 
@@ -815,7 +819,8 @@ class Pulse(QDialog):
 
     def check_output(self): # checks both outputs at the same time
         if self.check1:
-            if self.was_on1 != self.Rigol.isOutputOn(1): # if current state is not equal to previous state
+            if self.was_on1 != self.Rigol.isOutputOn(1):
+                # if current state is not equal to previous state
                 # this check is here so that if nothing has changed,
                 # we don't have to 'reset' the text and color
                 # of the display every half second to the same thing
@@ -847,7 +852,8 @@ class Pulse(QDialog):
         else:
             self.Rigol.polarityNorm(channel)
 
-    def check_polarity(self): # checks both at same time, same concept as check_output
+    def check_polarity(self):
+        # checks both at same time, same concept as check_output
         if self.check1:
             if self.was_norm1 != self.Rigol.isNorm(1):
                 self.was_norm1=self.Rigol.isNorm(1)
@@ -890,7 +896,8 @@ class Pulse(QDialog):
         else:
             self.Rigol.syncPolPos(channel)
 
-    def check_sync(self): # checks both channels at same time, same as check_output
+    def check_sync(self):
+        # checks both channels at same time, same as check_output
         if self.check1:
             if self.was_sync1 != self.Rigol.isSyncOn(1):
                 self.was_sync1=self.Rigol.isSyncOn(1)
@@ -1053,9 +1060,11 @@ class Pulse(QDialog):
 
     def check_pulse(self):
         if self.check1:
-            # queryApply returns list [waveform name, frequency, amplitude, offset, delay]
+            # queryApply returns list
+            # [waveform name, frequency, amplitude, offset, delay]
             lst1=self.Rigol.queryApply(1)
-            # lst[0] is ignored since we don't need waveform name here--we know it's a pulse
+            # lst[0] is ignored since we don't need waveform name here
+            # we know it's a pulse
             self.freq1disp.display(lst1[1])
             self.amp1disp.display(f"{lst1[2]:.2f}")
             self.os1disp.display(f"{lst1[3]:.2f}")
@@ -1070,7 +1079,7 @@ class Pulse(QDialog):
 
     def check_hold(self):
         if self.check1:
-            if self.was_width1 != self.Rigol.isWidth(1): # like was_on 
+            if self.was_width1 != self.Rigol.isWidth(1): # like was_on
                 self.was_width1=self.Rigol.isWidth(1)
                 if self.was_width1: # yellow if holding width
                     self.hold1disp.setText("Holding Width")
@@ -1147,4 +1156,3 @@ class Pulse(QDialog):
             self.check2=True
             self.check2disp.setText("Channel 2 In Use")
             self.check2disp.setStyleSheet("background:limegreen")
-

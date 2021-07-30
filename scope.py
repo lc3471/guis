@@ -5,11 +5,9 @@
 from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 
 from dcps import SiglentSDS1202XE
 
@@ -46,8 +44,8 @@ class Scope(QDialog):
         self.setLayout(mainLayout)
 
     def create_scope_box(self):
-
-        self.Siglent=SiglentSDS1202XE('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
+        str_='USB0::62701::60986::SDS1ECDD2R8216::0::INSTR'
+        self.Siglent=SiglentSDS1202XE(str_)
         self.Siglent.chdr_off()
 
         self.scope_box=QGroupBox("Siglent Oscilloscope")
@@ -173,11 +171,13 @@ class Scope(QDialog):
         self.stats_layout.addWidget(self.wfsuBox,13,0,1,2)
 
     def on_tdivbutton_clicked(self):
-        self.Siglent.set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
+        self.Siglent.set_tdiv(str(self.tdivmenu.currentText()),
+            str(self.tdivunit.currentText()))
         sleep(0.001)
 
     def on_trdlbutton_clicked(self):
-        self.Siglent.set_trdl(float(self.trdledit.text()),str(self.trdlunit.currentText()))
+        self.Siglent.set_trdl(float(self.trdledit.text()),
+            str(self.trdlunit.currentText()))
         sleep(0.001)
 
     def create_wfsuBox(self):
@@ -187,15 +187,18 @@ class Scope(QDialog):
 
         self.FPedit=QLineEdit()
         self.FPbutton=QPushButton("Set First Point")
-        self.FPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(FP=self.FPedit.text()))
+        self.FPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(
+            FP=self.FPedit.text()))
 
         self.NPedit=QLineEdit()
         self.NPbutton=QPushButton("Set Number of Points")
-        self.NPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(NP=self.NPedit.text()))
+        self.NPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(
+            NP=self.NPedit.text()))
 
         self.SPedit=QLineEdit()
         self.SPbutton=QPushButton("Set Sparsing")
-        self.SPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(SP=self.SPedit.text()))
+        self.SPbutton.clicked.connect(lambda: self.Siglent.waveformSetup(
+            SP=self.SPedit.text()))
 
         self.FPedit.setText('0')
         self.NPedit.setText('all')
@@ -379,14 +382,16 @@ class Scope(QDialog):
 
     def on_ofst1button_clicked(self):
         try:
-            self.Siglent.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
+            self.Siglent.set_ofst(1,self.ofst1edit.text(),
+                str(self.ofst1unit.currentText()))
             sleep(0.001)
         except:
             pass
 
     def on_ofst2button_clicked(self):
         try:
-            self.Siglent.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
+            self.Siglent.set_ofst(2,self.ofst2edit.text(),
+                str(self.ofst2unit.currentText()))
             sleep(0.001)
         except:
             pass
@@ -434,7 +439,7 @@ class Scope(QDialog):
 
     def create_chart1(self):
         self.chart1=QChart()
-        
+
         v,t=self.Siglent.getWaveform(1)
         sleep(0.001)
         self.series1=QSplineSeries()
@@ -465,7 +470,7 @@ class Scope(QDialog):
 
     def create_chart2(self):
         self.chart2=QChart()
-        
+
         v,t=self.Siglent.getWaveform(2)
         sleep(0.001)
         self.series2=QSplineSeries()
@@ -563,7 +568,8 @@ class Scope(QDialog):
                     sleep(0.001)
                     self.vdiv1 = self.Siglent.query_vdiv(1)
                     self.vdiv1disp.display(self.vdiv1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,
+                        4*self.vdiv1+self.ofst1)
                 sleep(0.001)
             except:
                 pass
@@ -574,7 +580,8 @@ class Scope(QDialog):
                     sleep(0.001)
                     self.vdiv2 = self.Siglent.query_vdiv(2)
                     self.vdiv2disp.display(self.vdiv2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,
+                        4*self.vdiv2+self.ofst2)
                 sleep(0.001)
             except:
                 pass
@@ -586,7 +593,8 @@ class Scope(QDialog):
                     sleep(0.001)
                     self.ofst1 = self.Siglent.query_ofst(1)
                     self.ofst1disp.display(self.ofst1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,
+                        4*self.vdiv1+self.ofst1)
                 sleep(0.001)
             except:
                 pass
@@ -597,7 +605,8 @@ class Scope(QDialog):
                     sleep(0.001)
                     self.ofst2 = self.Siglent.query_ofst(2)
                     self.ofst2disp.display(self.ofst2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,
+                        4*self.vdiv2+self.ofst2)
                 sleep(0.001)
             except:
                 pass
@@ -637,4 +646,3 @@ class Scope(QDialog):
             sleep(0.001)
         except:
             pass
-

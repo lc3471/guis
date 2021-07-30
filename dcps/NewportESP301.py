@@ -8,6 +8,7 @@ from time import sleep
 Class to control Newport Motion Controller via RS-232C
 Controller uses ASCII-based language, but not SCPI
 Hence class does not inherit SCPI whereas classes for other instruments do
+However does respond to standard commands like *IDN?
 """
 
 
@@ -16,6 +17,8 @@ class NewportESP301(object):
             read_termination='',write_termination='/r/n',
             baud_rate=19200,timeout=2000):
 
+        # set baud rate to 19200 for RS-232C connection
+        # IEEE-488 connection requires baud 921600, which is crazy
 
         self.resource=resource
         self.wait=wait
@@ -27,7 +30,8 @@ class NewportESP301(object):
 
     def open_inst(self):
         rm=visa.ResourceManager()
-        self.inst=rm.open_resource(self.resource,baud_rate=self.baud_rate,timeout=self.timeout)
+        self.inst=rm.open_resource(self.resource,baud_rate=self.baud_rate,
+            timeout=self.timeout)
 
     def close_inst(self):
         self.inst.close()
@@ -52,8 +56,9 @@ class NewportESP301(object):
         if axis<=self.max_axes:
             if type(unit)==str:
                 unit=unit.lower().replace(" ","")
-                retdict={"encodercount":0,"motorstep":1,"mm":2,"um":3,"in":4,"min":5,"uin":6,
-                        "deg":7,"grad":8,"rad":9,"mrad":10,"urad":11}
+                retdict={"encodercount":0,"motorstep":1,"mm":2,"um":3,"in":4,
+                    "min":5,"uin":6,"deg":7,"grad":8,"rad":9,"mrad":10,
+                    "urad":11}
                 if unit in retdict.keys():
                     unit=retdict[unit]
 
@@ -63,14 +68,15 @@ class NewportESP301(object):
         if axis<=self.max_axes:
             ret=int(self.inst.query(("{}SN?").format(axis)))
             retlist=["encoder count","motor step","mm","um","in","min","uin",
-                    "deg","grad","rad","mrad","urad"]
+                "deg","grad","rad","mrad","urad"]
             if ret<len(retlist):
                 return retlist[ret]
 
     def set_res(self,axis,res):
         # encoder resolution
         if axis<=self.max_axes:
-            """elif not self.enc_fdbk: pass""" # set encoder feedback on with ZB command
+            """elif not self.enc_fdbk: pass"""
+            # set encoder feedback on with ZB command
             if res<2*10**-9:
                 res=2*10**-9
             elif res>2*10**9:
@@ -125,10 +131,10 @@ class NewportESP301(object):
         # returns True if motor is on, False if motor is off
         if axis<=self.max_axes:
             ret=self.inst.query(("{}MO?").format(axis))
-            if ret=='0\r\n':
-                return False
-            else:
+            if ret=='1\r\n':
                 return True
+            else:
+                return False
 
 
     # motion

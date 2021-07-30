@@ -54,8 +54,10 @@ class AimTTiEL302P(SCPI):
     def __init__(self, resource, wait=1.0):
         """Init the class with the instruments resource string
 
-        resource - resource string or VISA descriptor, like TCPIP0::192.168.1.100::9221::SOCKET
-        wait     - float that gives the default number of seconds to wait after sending each command
+        resource - resource string or VISA descriptor,
+                    like TCPIP0::192.168.1.100::9221::SOCKET
+        wait     - float that gives the default number of seconds to wait
+                    after sending each command
 
         NOTE: According to the documentation for this power supply, the
         resource string when using the Ethernet access method must look
@@ -97,7 +99,7 @@ class AimTTiEL302P(SCPI):
         else:
             return False
 
-        # Only check first character so that there can be training whitespace that gets ignored
+        # Only check first character so that training whitespace gets ignored
         if (ret[0] == '1'):
             return True
         else:

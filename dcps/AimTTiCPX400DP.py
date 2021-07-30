@@ -54,8 +54,10 @@ class AimTTiCPX400DP(SCPI):
     def __init__(self, resource, wait=1.0):
         """Init the class with the instruments resource string
 
-        resource - resource string or VISA descriptor, like TCPIP0::192.168.1.100::9221::SOCKET
-        wait     - float that gives the default number of seconds to wait after sending each command
+        resource - resource string or VISA descriptor,
+                    like TCPIP0::192.168.1.100::9221::SOCKET
+        wait     - float that gives the default number of seconds to wait
+                    after sending each command
 
         NOTE: According to the documentation for this power supply, the
         resource string when using the Ethernet access method must look
@@ -114,7 +116,7 @@ class AimTTiCPX400DP(SCPI):
         _str = 'OP{}?'.format(self.channel)
         ret = self._instQuery(_str)
 
-        # Only check first character so that there can be training whitespace that gets ignored
+        # Only check first character so that training whitespace gets ignored
         if (ret[0] == '1'):
             return True
         else:
@@ -199,11 +201,12 @@ class AimTTiCPX400DP(SCPI):
             # break out the words from the response
             words = match.groups()
             if (len(words) != 3):
-                raise RuntimeError('Unexpected number of words in response: "{}"'.format(ret))
+                raise RuntimeError('Unexpected number of words in response:',
+                ' "{}"'.format(ret))
             elif(words[0] != 'V' or int(words[1]) != self.channel):
                 raise ValueError('Unexpected response format: "{}"'.format(ret))
             else:
-                # response checks out so return the fixed point response as a float()
+                # response checks out so return fixed point response as float
                 return float(words[2])
 
     def queryCurrent(self, channel=None):
@@ -222,16 +225,17 @@ class AimTTiCPX400DP(SCPI):
             # break out the words from the response
             words = match.groups()
             if (len(words) != 3):
-                raise RuntimeError('Unexpected number of words in response: "{}"'.format(ret))
+                raise RuntimeError('Unexpected number of words in response:',
+                '"{}"'.format(ret))
             elif(words[0] != 'I' or int(words[1]) != self.channel):
                 raise ValueError('Unexpected response format: "{}"'.format(ret))
             else:
-                # response checks out so return the fixed point response as a float()
+                # response checks out so return fixed point response as float
                 return float(words[2])
 
     def measureVoltage(self, channel=None):
         # measure voltage and measure current asks for actual value
-        # 0 when output is off 
+        # 0 when output is off
         if channel is not None:
             self.channel = channel
 
@@ -245,11 +249,12 @@ class AimTTiCPX400DP(SCPI):
             # break out the words from the response
             words = match.groups()
             if (len(words) != 2):
-                raise RuntimeError('Unexpected number of words in response: "{}"'.format(ret))
+                raise RuntimeError('Unexpected number of words in response:,'
+                '"{}"'.format(ret))
             elif(words[1] != 'V'):
                 raise ValueError('Unexpected response format: "{}"'.format(ret))
             else:
-                # response checks out so return the fixed point response as a float()
+                # response checks out so return fixed point response as float
                 return float(words[0])
 
     def measureCurrent(self, channel=None):
@@ -268,9 +273,10 @@ class AimTTiCPX400DP(SCPI):
             # break out the words from the response
             words = match.groups()
             if (len(words) != 2):
-                raise RuntimeError('Unexpected number of words in response: "{}"'.format(ret))
+                raise RuntimeError('Unexpected number of words in response:',
+                '"{}"'.format(ret))
             elif(words[1] != 'A'):
                 raise ValueError('Unexpected response format: "{}"'.format(ret))
             else:
-                # response checks out so return the fixed point response as a float()
+                # response checks out so return fixed point response as float
                 return float(words[0])

@@ -3,13 +3,30 @@
 """
 @author: Laurel Carpenter
 """
+
+"""
+Troubleshooting:
+won't connect to device: SerialException
+    means device is not connected or something wrong with symlink. make sure the
+     symlink 'psu1' or 'psu2' exists in serial-ports.rules
+won't connect to device: VisaIOError
+    means device is not connected or incorrect address. try connecting via
+    symlink ('psu#') instead of 'ttyACM#'
+    if symlink isn't working, check which machine is 'ttyACM0' and which is
+    'ttyACM1', and make sure they're set up like that in the code
+won't connect to device: incorrect ioctl
+    haven't figured out what's up with this error. try connecting to 'ttyACM#'
+    instead of symlink
+won't connect to device: permission denied
+    make sure permission '0666' is granted in serial-ports.rules
+"""
+
+
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 import sys
 import argparse
 
@@ -25,10 +42,8 @@ from pyvisa.errors import VisaIOError
 from serial.serialutil import SerialException
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--dry_run',
-                        type=bool,
-                        default=False,
-                        help='Run without controlling the flasher (default=False)')
+parser.add_argument('--dry_run',type=bool,default=False,
+                    help='Run without controlling the flasher (default=False)')
 args = parser.parse_args()
 
 chr = functools.partial(struct.pack,'B')
@@ -40,25 +55,25 @@ class WidgetGallery(QDialog):
     def __init__(self, parent=None):
         super(WidgetGallery, self).__init__(parent)
 
-        # start a timer to measure the PSU I and V every 0.5 s 
+        # start a timer to measure the PSU I and V every 0.5 s
         self.qTimer = QTimer()
         self.qTimer.setInterval(500)
         self.qTimer.start()
 
         mainLayout = QGridLayout()
-        
+
         try:
             self.createPSU1Box()
         except VisaIOError as err:
             self.PSU1except(err)
         except SerialException as err:
             self.PSU1except(err)
-        
+
         try:
             self.createPSU2Box()
         except VisaIOError as err:
             self.PSU2except(err)
-        except SerialException as err: 
+        except SerialException as err:
             self.PSU2except(err)
 
         self.setLayout(mainLayout)
@@ -94,21 +109,20 @@ class WidgetGallery(QDialog):
         self.Imeas = self.aim1.measureCurrent()
 
         self.was_on_PSU1=self.aim1.isOutputOn()
-        
+
         self.qTimer.timeout.connect(self.query_voltage_PSU1)
         self.qTimer.timeout.connect(self.query_current_PSU1)
         self.qTimer.timeout.connect(self.measure_voltage_PSU1)
         self.qTimer.timeout.connect(self.measure_current_PSU1)
         self.qTimer.timeout.connect(self.check_output_PSU1)
 
-        ##Creates a PSU Box, calls functions to create the Vbox and Ibox that go inside.
         self.PSU1Box = QGroupBox("Control Single PSU")
         self.PSU1Box.setObjectName("psu1")
         self.PSU1Box.setStyleSheet("QGroupBox#psu1 { font-weight: bold; }")
 
         self.PSU1Layout = QGridLayout()
         self.PSU1Box.setLayout(self.PSU1Layout)
-        
+
         self.create_Vbox_PSU1()
         self.create_Ibox_PSU1()
         self.PSU1Layout.addWidget(self.Vbox_PSU1,0,0)
@@ -130,14 +144,14 @@ class WidgetGallery(QDialog):
         self.VsetNumber.setFrameShape(QFrame.StyledPanel)
         self.setVButton_PSU1 = QPushButton("Set Voltage")
         self.setVButton_PSU1.clicked.connect(self.on_vbutton_PSU1_clicked)
-        
+
         self.Vlayout_PSU1.addWidget(self.VmeasNumber)
         self.Vlayout_PSU1.addWidget(self.PSU1vPrompt)
         self.Vlayout_PSU1.addWidget(self.VsetNumber)
         self.Vlayout_PSU1.addWidget(self.PSU1vSet)
         self.Vlayout_PSU1.addWidget(self.setVButton_PSU1)
 
-    
+
     def create_Ibox_PSU1(self):
         self.Ibox_PSU1 = QGroupBox("Current")
         self.Ilayout_PSU1 = QVBoxLayout()
@@ -151,7 +165,7 @@ class WidgetGallery(QDialog):
         self.IsetNumber.setFrameShape(QFrame.StyledPanel)
         self.setIButton_PSU1 = QPushButton("Set Current")
         self.setIButton_PSU1.clicked.connect(self.on_ibutton_PSU1_clicked)
-        
+
         self.Ilayout_PSU1.addWidget(self.ImeasNumber)
         self.Ilayout_PSU1.addWidget(self.PSU1iPrompt)
         self.Ilayout_PSU1.addWidget(self.IsetNumber)
@@ -189,10 +203,12 @@ class WidgetGallery(QDialog):
                 self.aim1.setVoltage(set_voltage)
             else:
                 alert = QMessageBox()
-                alert.setText("You must turn off output before changing the voltage")
+                alert.setText("You must turn off output before",
+                    "changing the voltage")
                 alert.exec_()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted",
+                "a dry run.")
 
     def on_ibutton_PSU1_clicked(self):
         set_current = self.PSU1iSet.text()
@@ -204,10 +220,12 @@ class WidgetGallery(QDialog):
                 self.aim1.setCurrent(set_current)
             else:
                 alert = QMessageBox()
-                alert.setText("You must turn off output before changing the current")
+                alert.setText("You must turn off output before changing",
+                    "the current")
                 alert.exec_()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+                "dry run.")
 
     def toggle_output_PSU1(self):
         if not dry_run:
@@ -216,7 +234,8 @@ class WidgetGallery(QDialog):
             else:
                 self.aim1.outputOn()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+            "dry run.")
 
     def measure_voltage_PSU1(self):
         self.Vmeas = self.aim1.measureVoltage()
@@ -227,7 +246,9 @@ class WidgetGallery(QDialog):
         self.ImeasNumber.display(f"{self.Imeas:.2f}")
 
     def check_output_PSU1(self):
-        if self.was_on_PSU1 != self.aim1.isOutputOn(): ## asking if anything has changed since last 0.5s, so we don't have to keep reprinting text
+        if self.was_on_PSU1 != self.aim1.isOutputOn():
+            ## asking if anything has changed since last 0.5s
+            ## so we don't have to keep reprinting text
             self.was_on_PSU1=self.aim1.isOutputOn()
             if self.aim1.isOutputOn():
                 self.Odisplay_PSU1.setText("Output is On")
@@ -249,9 +270,9 @@ class WidgetGallery(QDialog):
 
 
     def createPSU2Box(self):
-        self.aim2=AimTTiCPX400DP('ASRL/dev/ttyACM1::INSTR')
+        self.aim2=AimTTiCPX400DP('ASRL/dev/psu2::INSTR')
         self.aim2.open()
-        
+
         self.was_VTracking=self.aim2.isVTracking()
 
         self.VmeasNum1 = QLCDNumber()
@@ -287,7 +308,7 @@ class WidgetGallery(QDialog):
         self.PSU2Box.setStyleSheet("QGroupBox#psu2 { font-weight: bold; }")
         self.PSU2Layout = QGridLayout()
         self.PSU2Box.setLayout(self.PSU2Layout)
-        
+
         self.create_box1()
         self.create_box2()
         self.create_controlBox()
@@ -306,7 +327,7 @@ class WidgetGallery(QDialog):
         self.box1layout.addWidget(self.Vbox1,0,0)
         self.box1layout.addWidget(self.Ibox1,0,1)
         self.box1layout.addWidget(self.Obox1,1,0,1,2)
-    
+
     def create_box2(self):
         self.box2=QGroupBox("Control Secondary PS")
         self.create_Vbox2()
@@ -317,7 +338,7 @@ class WidgetGallery(QDialog):
         self.box2layout.addWidget(self.Vbox2,0,0)
         self.box2layout.addWidget(self.Ibox2,0,1)
         self.box2layout.addWidget(self.Obox2,1,0,1,2)
-    
+
     def create_controlBox(self):
         self.controlBox=QGroupBox()
         self.create_OAllBox()
@@ -364,7 +385,8 @@ class WidgetGallery(QDialog):
                 self.aim2.outputOn(1)
                 self.aim2.outputOnAll()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted",
+                "a dry run.")
 
     def toggle_VTracking(self):
         if not dry_run:
@@ -375,10 +397,12 @@ class WidgetGallery(QDialog):
                     self.aim2.setVTracking()
             else:
                 alert=QMessageBox()
-                alert.setText("You must turn off output 2 before toggling voltage tracking.")
+                alert.setText("You must turn off output 2 before toggling",
+                    "voltage tracking.")
                 alert.exec_()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+                "dry run.")
 
     def check_VTracking(self):
         if self.was_VTracking != self.aim2.isVTracking():
@@ -389,7 +413,7 @@ class WidgetGallery(QDialog):
             else:
                 self.VTdisplay.setText("Voltage Tracking is On")
                 self.VTdisplay.setStyleSheet("background:limegreen")
-        
+
     def create_Vbox1(self):
         self.Vbox1 = QGroupBox("Voltage")
         self.Vlayout1 = QVBoxLayout()
@@ -519,10 +543,12 @@ class WidgetGallery(QDialog):
                 self.aim2.setVoltage(set_voltage,n)
             else:
                 alert = QMessageBox()
-                alert.setText("You must turn off output before changing the voltage")
+                alert.setText("You must turn off output before changing",
+                    "the voltage")
                 alert.exec_()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+                "dry run.")
 
     def setI(self, set_current, n):
         if not dry_run:
@@ -530,10 +556,12 @@ class WidgetGallery(QDialog):
                 self.aim2.setCurrent(set_current,n)
             else:
                 alert = QMessageBox()
-                alert.setText("You must turn off output before changing the current")
+                alert.setText("You must turn off output before changing",
+                    "the current")
                 alert.exec_()
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+                "dry run.")
 
     def toggle_output(self, n):
         if not dry_run:
@@ -542,7 +570,8 @@ class WidgetGallery(QDialog):
             else:
                 self.aim2.outputOn(n)
         else:
-            print("Pranked! I didn't actually do it because you wanted a dry run.")
+            print("Pranked! I didn't actually do it because you wanted a",
+                "dry run.")
 
     def on_vbutton1_clicked(self):
         set_voltage = self.PSU2v1Set.text()
@@ -569,7 +598,7 @@ class WidgetGallery(QDialog):
         self.ImeasNum1.display(f"{self.Imeas1:.2f}")
 
     def check_output1(self):
-        if self.O1_was_on != self.aim2.isOutputOn(1): ## asking if anything has changed since last 0.5s, so we don't have to keep reprinting text
+        if self.O1_was_on != self.aim2.isOutputOn(1):
             self.O1_was_on=self.aim2.isOutputOn(1)
             if self.aim2.isOutputOn(1):
                 self.Odisplay1.setText("Output is On")
@@ -587,7 +616,7 @@ class WidgetGallery(QDialog):
         self.ImeasNum2.display(f"{self.Imeas2:.2f}")
 
     def check_output2(self):
-        if self.O2_was_on != self.aim2.isOutputOn(2): ## asking if anything has changed since last 0.5s, so we don't have to keep reprinting text
+        if self.O2_was_on != self.aim2.isOutputOn(2): 
             self.O2_was_on=self.aim2.isOutputOn(2)
             if self.aim2.isOutputOn(2):
                 self.Odisplay2.setText("Output is On")
@@ -635,4 +664,3 @@ if __name__ == "__main__":
     wg=WidgetGallery()
     wg.show()
     sys.exit(app.exec_())
-

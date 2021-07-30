@@ -2,14 +2,11 @@
 # 07/28/2021
 # adapted from motion_control_gui.py
 
-from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 
 from dcps import NewportESP301
 from pyvisa.errors import VisaIOError
@@ -26,10 +23,10 @@ class Motion(QDialog):
             self.create_control_box()
             self.isConnected=True
         except VisaIOError as err:
-            self.control_box=QLabel("Motion Controller Not Connected: "+str(err))
+            self.control_box=QLabel("Motion Controller Not Connected:",str(err))
             self.isConnected=False
         except SerialException as err:
-            self.control_box=QLabel("Motion Controller Not Connected: "+str(err))
+            self.control_box=QLabel("Motion Controller Not Connected:",str(err))
             self.isConnected=False
 
         mainLayout.addWidget(self.control_box)
@@ -494,5 +491,3 @@ class Motion(QDialog):
     def on_rl2_clicked(self):
         self.rlim2=float(self.rl2edit.text())
         self.rl2disp.display(self.rlim2)
-
-

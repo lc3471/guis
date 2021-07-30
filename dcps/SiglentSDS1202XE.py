@@ -31,7 +31,8 @@ class SiglentSDS1202XE(object):
 
     def open_inst(self):
         rm=visa.ResourceManager()
-        self.inst=rm.open_resource(self.resource,chunk_size=self.chunk_size,timeout=self.timeout)
+        self.inst=rm.open_resource(self.resource,chunk_size=self.chunk_size,
+            timeout=self.timeout)
 
     def close_inst(self):
         self.inst.close()
@@ -216,7 +217,7 @@ class SiglentSDS1202XE(object):
         sleep(wait)
 
     def isAcq(self):
-        # ask if currently acquiring signal 
+        # ask if currently acquiring signal
         ret=self.inst.query("TRMD?")
         if ret=="STOP\n":
             return False

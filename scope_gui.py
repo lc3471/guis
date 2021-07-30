@@ -1,14 +1,35 @@
 # author: Laurel Carpenter
 # date: 7/15/2021
 
-from PyQt5.QtChart import QChartView, QChart, QLineSeries, QSplineSeries, QValueAxis
+"""
+Troubleshooting:
+visa not connecting to device:
+-make sure device is actually connected using 'lsusb' command
+-make sure '0660' permission is granted in usbtmc.rules
+-when first turning on it takes ~30 sec to actually connect
+'device has no langid':
+-turn the scope off and on again, wait a few seconds to reconnect
+
+This machine freaks out if it's queried too much, or if its responses are too
+large. Avoid doing the following:
+-adjusting tdiv/vdiv/ofst/trdl too much too quickly
+-sampling too many points:
+    tdiv 1-2 ns with sparsing=all works fine, but once it reaches 5 ns the
+    number of sampled points is too high. set number of points to something like
+     30, and adjust first point and sparsing to make sure you're getting the
+    whole curve.
+
+if you want to save a waveform but it's not working from the GUI, run
+'scope_test.py' without running GUI.
+"""
+
+
+from PyQt5.QtChart import QChartView,QChart,QLineSeries,QSplineSeries,QValueAxis
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 import visa
 import math
 
@@ -32,8 +53,8 @@ fname='test'
 class WidgetGallery(QDialog):
     def __init__(self, parent=None):
         super(WidgetGallery, self).__init__(parent)
-        
-        self.wait=0.5        
+
+        self.wait=0.5
         self.open_siglent('USB0::62701::60986::SDS1ECDD2R8216::0::INSTR')
 
         self.qTimer=QTimer()
@@ -81,7 +102,7 @@ class WidgetGallery(QDialog):
         self.stats_box=QGroupBox()
         self.stats_layout=QGridLayout()
         self.stats_box.setLayout(self.stats_layout)
-        
+
         tdiv_label=QLabel("Time Division [s]")
         self.tdiv_disp=QLCDNumber()
         self.tdiv=self.query_tdiv()
@@ -145,7 +166,7 @@ class WidgetGallery(QDialog):
         else:
             self.acq_disp.setText("Stopped")
             self.acq_disp.setStyleSheet("background:red")
-        
+
         self.stats_layout.addWidget(acq_label,0,0,1,2)
         self.stats_layout.addWidget(self.acq_disp,1,0,1,2)
         self.stats_layout.addWidget(self.acq_button,2,0,1,2)
@@ -167,13 +188,15 @@ class WidgetGallery(QDialog):
 
     def on_tdivbutton_clicked(self):
         try:
-            self.set_tdiv(str(self.tdivmenu.currentText()),str(self.tdivunit.currentText()))
+            self.set_tdiv(str(self.tdivmenu.currentText()),
+                str(self.tdivunit.currentText()))
         except:
             pass
 
     def on_trdlbutton_clicked(self):
         try:
-            self.set_trdl(float(self.trdledit.text()),str(self.trdlunit.currentText()))
+            self.set_trdl(float(self.trdledit.text()),
+                str(self.trdlunit.currentText()))
         except:
             pass
 
@@ -184,15 +207,18 @@ class WidgetGallery(QDialog):
 
         self.FPedit=QLineEdit()
         self.FPbutton=QPushButton("Set First Point")
-        self.FPbutton.clicked.connect(lambda: self.waveformSetup(FP=self.FPedit.text()))
+        self.FPbutton.clicked.connect(lambda: self.waveformSetup(
+            FP=self.FPedit.text()))
 
         self.NPedit=QLineEdit()
         self.NPbutton=QPushButton("Set Number of Points")
-        self.NPbutton.clicked.connect(lambda: self.waveformSetup(NP=self.NPedit.text()))
+        self.NPbutton.clicked.connect(lambda: self.waveformSetup(
+            NP=self.NPedit.text()))
 
         self.SPedit=QLineEdit()
         self.SPbutton=QPushButton("Set Sparsing")
-        self.SPbutton.clicked.connect(lambda: self.waveformSetup(SP=self.SPedit.text()))
+        self.SPbutton.clicked.connect(lambda: self.waveformSetup(
+            SP=self.SPedit.text()))
 
         self.FPedit.setText('0')
         self.NPedit.setText('all')
@@ -382,13 +408,15 @@ class WidgetGallery(QDialog):
 
     def on_ofst1button_clicked(self):
         try:
-            self.set_ofst(1,self.ofst1edit.text(),str(self.ofst1unit.currentText()))
+            self.set_ofst(1,self.ofst1edit.text(),
+                str(self.ofst1unit.currentText()))
         except:
             pass
 
     def on_ofst2button_clicked(self):
         try:
-            self.set_ofst(2,self.ofst2edit.text(),str(self.ofst2unit.currentText()))
+            self.set_ofst(2,self.ofst2edit.text(),
+                str(self.ofst2unit.currentText()))
         except:
             pass
 
@@ -452,7 +480,7 @@ class WidgetGallery(QDialog):
         self.Xaxis1.setMinorTickCount(1)
         self.chart1.addAxis(self.Xaxis1,Qt.AlignBottom)
         self.series1.attachAxis(self.Xaxis1)
-        
+
         self.Yaxis1=QValueAxis()
         self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
         self.Yaxis1.setTickCount(5)
@@ -540,13 +568,15 @@ class WidgetGallery(QDialog):
                 if self.vdiv1 != self.query_vdiv(1):
                     self.vdiv1 = self.query_vdiv(1)
                     self.vdiv1disp.display(self.vdiv1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,
+                        4*self.vdiv1+self.ofst1)
 
             if self.channel2:
                 if self.vdiv2 != self.query_vdiv(2):
                     self.vdiv2 = self.query_vdiv(2)
                     self.vdiv2disp.display(self.vdiv2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,
+                        4*self.vdiv2+self.ofst2)
         except:
             pass
 
@@ -556,13 +586,15 @@ class WidgetGallery(QDialog):
                 if self.ofst1 != self.query_ofst(1):
                     self.ofst1 = self.query_ofst(1)
                     self.ofst1disp.display(self.ofst1)
-                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,4*self.vdiv1+self.ofst1)
+                    self.Yaxis1.setRange(-4*self.vdiv1+self.ofst1,
+                        4*self.vdiv1+self.ofst1)
 
             if self.channel2:
                 if self.ofst2 != self.query_ofst(2):
                     self.ofst2 = self.query_ofst(2)
                     self.ofst2disp.display(self.ofst2)
-                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,4*self.vdiv2+self.ofst2)
+                    self.Yaxis2.setRange(-4*self.vdiv2+self.ofst2,
+                        4*self.vdiv2+self.ofst2)
         except:
             pass
 
@@ -619,7 +651,7 @@ class WidgetGallery(QDialog):
     def query_ofst(self,channel):
         ret=self.Siglent.query(("C{}:OFST?").format(channel))
         return float(ret)
-    
+
     def query_vdiv(self,channel):
         ret=self.Siglent.query(("C{}:VDIV?").format(channel))
         return float(ret)
@@ -635,7 +667,7 @@ class WidgetGallery(QDialog):
     def query_trdl(self):
         ret=self.Siglent.query("TRDL?")
         return float(ret)
-    
+
     def set_vdiv(self,channel,vdiv,wait=None):
         # possible VDIV:
         # 500 UV (micro)
@@ -666,7 +698,7 @@ class WidgetGallery(QDialog):
         # 1,2,5,10,20,50,100,200,500 US (micro)
         # 1,2,5,10,20,50,100,200,500 MS
         # 1,2,5,10,20,50,100 S
-        if unit=="\u03BCs": 
+        if unit=="\u03BCs":
             unit="US" # change unicode mu to letter u
         elif (unit=='s') and ((tdiv=='200') or (tdiv=='500')):
             tdiv='100' # can't set tdiv to 200 or 500 S, so set to max (100 S)
@@ -719,9 +751,9 @@ class WidgetGallery(QDialog):
         for i in range(len(vlist)):
             t=-tdiv*7+i/sara
             points.append(t,vlist[i])
-            
+
         return points
-        
+
 
     def waveformSetup(self, FP=None, NP=None, SP=None, wait=None):
         #FP: First point
@@ -738,7 +770,7 @@ class WidgetGallery(QDialog):
         # 1: send all
         # 2: send every other
         # 5: send every 5th
-        
+
         if FP is None:
             FP=self.querySetup()[0]
         if NP is None:
@@ -800,4 +832,3 @@ if __name__=="__main__":
     wg=WidgetGallery()
     wg.show()
     sys.exit(app.exec_())
-

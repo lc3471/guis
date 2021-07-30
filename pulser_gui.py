@@ -1,20 +1,37 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 18 14:06:41 2019
+Created on Thu Jul 18
 
 @author: Laurel Carpenter
 
 """
+"""
+Troubleshooting:
+visa not connecting to device:
+-check that device is actually connected using 'lsusb' command
+-make sure permission '0660' is granted in usbtmc.rules
+
+Set up a simple pulse:
+-set freq to 1000 Hz, amp to 5 V, offset and delay to 0
+-set impedance to inf/highZ
+-click 'send pulse'
+pulse still looks weird?
+-set duty cycle to 0.001%
+STILL looks weird?
+-set pulse width to 4e-09, toggle to holding pulse width
+can't see it on scope?
+-set tdiv to 1 ns, center on 0
+-set vdiv to 1 V, center on 0
+"""
+
 
 
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber,
-        QLineEdit, QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QFormLayout, QWidget, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QComboBox, QDialog, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLCDNumber, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget, QMessageBox)
 #import serial
 #import time
 import sys
@@ -30,10 +47,8 @@ from datetime import datetime
 from math import inf
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--dry_run',
-                        type=bool,
-                        default=False,
-                        help='Run without controlling the flasher (default=False)')
+parser.add_argument('--dry_run',type=bool,default=False,
+                    help='Run without controlling the flasher (default=False)')
 args = parser.parse_args()
 
 chr = functools.partial(struct.pack,'B')
@@ -45,11 +60,11 @@ class WidgetGallery(QDialog):
     def __init__(self, parent=None):
         super(WidgetGallery, self).__init__(parent)
 
-        # start a timer ?? 
+        # start a timer ??
         self.qTimer = QTimer()
         self.qTimer.setInterval(500)
         self.qTimer.start()
-        
+
         self.qTimer.timeout.connect(self.check_output)
         self.qTimer.timeout.connect(self.check_pulse)
         self.qTimer.timeout.connect(self.check_polarity)
@@ -62,17 +77,15 @@ class WidgetGallery(QDialog):
         self.qTimer.timeout.connect(self.check_hold)
         self.qTimer.timeout.connect(self.check_lead)
         self.qTimer.timeout.connect(self.check_trail)
-        
+
         # whether to check channel 1 and channel 2 or not
         self.check1=True
         self.check2=False
 
         # start with a grid layout
         mainLayout = QGridLayout()
-        
-        # build a PSUBox
-        #### some renaming in this function may be necessary as we build the GUI up to include other elements
-        
+
+
         self.create_pulser_box()
         mainLayout.addWidget(self.pulser_box,0,0)
 
@@ -80,14 +93,14 @@ class WidgetGallery(QDialog):
         self.setLayout(mainLayout)
 
     def create_pulser_box(self):
-        
+
         # connect to pulser
         self.Rigol=RigolDG5000('USB0::6833::1600::DG5T220100004\x00::0::INSTR')
 
         self.pulser_box=QGroupBox("Rigol Pulser")
         self.pulser_layout=QGridLayout()
         self.pulser_box.setLayout(self.pulser_layout)
-        
+
         # 2 boxes for 2 channels
         self.create_box1()
         self.pulser_layout.addWidget(self.box1,0,0)
@@ -99,10 +112,11 @@ class WidgetGallery(QDialog):
         self.box1=QGroupBox("Channel 1")
         self.box1layout=QGridLayout()
         self.box1.setLayout(self.box1layout)
-        
+
         self.check1button=QPushButton("Toggle Using Channel 1")
         self.check1button.clicked.connect(self.toggle_check1)
-        self.check1disp=QLabel("Channel 1 In Use") # display whether communicating w channel 1
+        self.check1disp=QLabel("Channel 1 In Use")
+        # display whether communicating w channel 1
         self.check1disp.setAlignment(Qt.AlignCenter)
         self.check1disp.setFrameShape(QFrame.StyledPanel)
         self.check1disp.setStyleSheet("background:limegreen")
@@ -122,14 +136,15 @@ class WidgetGallery(QDialog):
         self.box2=QGroupBox("Channel 2")
         self.box2layout=QGridLayout()
         self.box2.setLayout(self.box2layout)
-        
+
         self.check2button=QPushButton("Toggle Using Channel 2")
         self.check2button.clicked.connect(self.toggle_check2)
-        self.check2disp=QLabel("Channel 2 Not In Use") # display whether communicating w channel 2
+        self.check2disp=QLabel("Channel 2 Not In Use")
+        # display whether communicating w channel 2
         self.check2disp.setAlignment(Qt.AlignCenter)
         self.check2disp.setFrameShape(QFrame.StyledPanel)
         self.check2disp.setStyleSheet("background:red")
-        
+
         self.box2layout.addWidget(self.check2disp,0,0)
         self.box2layout.addWidget(self.check2button,0,1)
 
@@ -184,7 +199,8 @@ class WidgetGallery(QDialog):
         self.outLayout1=QVBoxLayout()
         self.outBox1.setLayout(self.outLayout1)
 
-        self.Obutton1=QPushButton("Toggle Output") # click button to change output
+        self.Obutton1=QPushButton("Toggle Output")
+        # click button to change output
         self.Obutton1.clicked.connect(lambda: self.toggle_output(1))
 
         self.Odisplay1=QLabel() # display on or off
@@ -212,7 +228,8 @@ class WidgetGallery(QDialog):
         self.outLayout2=QVBoxLayout()
         self.outBox2.setLayout(self.outLayout2)
 
-        self.Obutton2=QPushButton("Toggle Output") # click button to change output
+        self.Obutton2=QPushButton("Toggle Output")
+        # click button to change output
         self.Obutton2.clicked.connect(lambda: self.toggle_output(2))
 
         self.Odisplay2=QLabel() # display on or off
@@ -233,13 +250,13 @@ class WidgetGallery(QDialog):
         self.outLayout2.addWidget(self.Obutton2)
 
     def create_polBox1(self):
-        
+
         # essentially same deal as output toggle/display
         self.polBox1=QGroupBox("Polarity")
         self.polLayout1=QVBoxLayout()
         self.polBox1.setLayout(self.polLayout1)
 
-        self.polButton1=QPushButton("Toggle Polarity") 
+        self.polButton1=QPushButton("Toggle Polarity")
         self.polButton1.clicked.connect(lambda: self.toggle_polarity(1))
 
         self.polDisplay1=QLabel()
@@ -255,7 +272,7 @@ class WidgetGallery(QDialog):
         else: # red if inverted
             self.polDisplay1.setText("Inverted")
             self.polDisplay1.setStyleSheet("background:red")
-        
+
         self.polLayout1.addWidget(self.polDisplay1)
         self.polLayout1.addWidget(self.polButton1)
 
@@ -347,9 +364,10 @@ class WidgetGallery(QDialog):
         self.syncPol1layout=QVBoxLayout()
         self.syncPolBox1.setLayout(self.syncPol1layout)
 
-        self.syncPolButton1=QPushButton("Toggle Sync Polarity") # set sync polarity pos/neg
+        self.syncPolButton1=QPushButton("Toggle Sync Polarity")
+        # set sync polarity pos/neg
         self.syncPolButton1.clicked.connect(lambda: self.toggle_syncPol(1))
-        
+
         self.syncPolDisplay1=QLabel()
 
         self.syncPolDisplay1.setAlignment(Qt.AlignCenter)
@@ -400,7 +418,8 @@ class WidgetGallery(QDialog):
         self.syncPolBox2.setLayout(self.syncPol2layout)
 
         self.syncPolButton2=QPushButton("Toggle Sync Polarity")
-        self.syncPolButton2.clicked.connect(lambda: self.toggle_syncPol(2)) # pos/neg
+        self.syncPolButton2.clicked.connect(lambda: self.toggle_syncPol(2))
+        # pos/neg
 
         self.syncPolDisplay2=QLabel()
 
@@ -493,7 +512,7 @@ class WidgetGallery(QDialog):
 
         self.freq1disp=QLCDNumber() # display freq as LCD number
         self.freq1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.freq1setLabel=QLabel("Set Frequency")
         self.freq1set=QLineEdit() # input new freq
 
@@ -508,7 +527,7 @@ class WidgetGallery(QDialog):
 
         self.amp1disp=QLCDNumber() # display
         self.amp1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.amp1setLabel=QLabel("Set Amplitude")
         self.amp1set=QLineEdit() # input
 
@@ -523,7 +542,7 @@ class WidgetGallery(QDialog):
 
         self.os1disp=QLCDNumber() # display
         self.os1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.os1setLabel=QLabel("Set Offset")
         self.os1set=QLineEdit() # input
 
@@ -538,7 +557,7 @@ class WidgetGallery(QDialog):
 
         self.delay1disp=QLCDNumber() # display
         self.delay1disp.setSegmentStyle(QLCDNumber.Flat)
-        
+
         self.delay1setLabel=QLabel("Set Delay")
         self.delay1set=QLineEdit() # input
 
@@ -659,7 +678,7 @@ class WidgetGallery(QDialog):
         else: # blue if holding duty cycle
             self.hold1disp.setText("Holding Duty")
             self.hold1disp.setStyleSheet("background:cyan")
-        
+
         self.hold1layout.addWidget(self.hold1disp)
         self.hold1layout.addWidget(self.hold1button)
 
@@ -829,12 +848,13 @@ class WidgetGallery(QDialog):
                 self.Rigol.outputOff(channel) # turn off
             else: # if off
                 self.Rigol.outputOn(channel) # turn on
-        else: 
+        else:
             print("Pranked! dry run :)")
 
     def check_output(self): # checks both outputs at the same time
         if self.check1:
-            if self.was_on1 != self.Rigol.isOutputOn(1): # if current state is not equal to previous state
+            if self.was_on1 != self.Rigol.isOutputOn(1):
+                # if current state is not equal to previous state
                 # this check is here so that if nothing has changed,
                 # we don't have to 'reset' the text and color
                 # of the display every half second to the same thing
@@ -869,7 +889,8 @@ class WidgetGallery(QDialog):
         else:
             print("Pranked! dry run :)")
 
-    def check_polarity(self): # checks both at same time, same concept as check_output
+    def check_polarity(self):
+        # checks both at same time, same concept as check_output
         if self.check1:
             if self.was_norm1 != self.Rigol.isNorm(1):
                 self.was_norm1=self.Rigol.isNorm(1)
@@ -904,7 +925,7 @@ class WidgetGallery(QDialog):
         else:
             print("Pranked! dry run :)")
 
-    def toggle_syncPol(self, channel=1): 
+    def toggle_syncPol(self, channel=1):
         if not dry_run: # don't want to actually change if dry run
             if (channel==1) and not self.check1:
                 self.toggle_check1()
@@ -918,7 +939,8 @@ class WidgetGallery(QDialog):
         else:
             print("Pranked! dry run :)")
 
-    def check_sync(self): # checks both channels at same time, same as check_output
+    def check_sync(self):
+        # checks both channels at same time, same as check_output
         if self.check1:
             if self.was_sync1 != self.Rigol.isSyncOn(1):
                 self.was_sync1=self.Rigol.isSyncOn(1)
@@ -979,7 +1001,7 @@ class WidgetGallery(QDialog):
             if not self.check1:
                 self.toggle_check1()
             # take frequency, amplitude, offset, and delay from QLineEdit boxes
-            freq=self.freq1set.text() 
+            freq=self.freq1set.text()
             amp=self.amp1set.text()
             offset=self.os1set.text()
             delay=self.delay1set.text()
@@ -1124,14 +1146,16 @@ class WidgetGallery(QDialog):
 
     def check_pulse(self):
         if self.check1:
-            # queryApply returns list [waveform name, frequency, amplitude, offset, delay]
+            # queryApply returns list
+            # [waveform name, frequency, amplitude, offset, delay]
             lst1=self.Rigol.queryApply(1)
-            # lst[0] is ignored since we don't need waveform name here--we know it's a pulse
+            # lst[0] is ignored since we don't need waveform name here
+            # we know it's a pulse
             self.freq1disp.display(lst1[1])
             self.amp1disp.display(f"{lst1[2]:.2f}")
             self.os1disp.display(f"{lst1[3]:.2f}")
             self.delay1disp.display(f"{lst1[4]:.2f}")
-        
+
         if self.check2: # if we want to check channel 2 as well
             lst2=self.Rigol.queryApply(2)
             self.freq2disp.display(lst2[1])
@@ -1141,7 +1165,7 @@ class WidgetGallery(QDialog):
 
     def check_hold(self):
         if self.check1:
-            if self.was_width1 != self.Rigol.isWidth(1): # like was_on 
+            if self.was_width1 != self.Rigol.isWidth(1): # like was_on
                 self.was_width1=self.Rigol.isWidth(1)
                 if self.was_width1: # yellow if holding width
                     self.hold1disp.setText("Holding Width")
@@ -1232,4 +1256,3 @@ if __name__ == "__main__":
     wg=WidgetGallery()
     wg.show()
     sys.exit(app.exec_())
-
