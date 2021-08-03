@@ -1,23 +1,44 @@
-README
-
 Laurel Carpenter
 07/30/2021
 
 Instructions for use of GUIs and explanation of their development
 
-general notes:
--all GUI classes contain super clauses because I was going to use them and then
- I didn't, and I forgot to remove them. sorry!
+general note:
 -all GUIs are available as individual programs and as modules that can be
 imported into master_gui. master_gui is currently configured to display the
 pulser, both PSUs, and the motion controller on the ctalab desktop monitor at
 Nevis. if you want to run all GUIs at the same time, run master_gui AND
 scope_gui.
--all GUIs contain a closeEvent function that will disconnect the instrument
-when the GUI window is closed. PSUs and pulser also turn off outputs upon a
-close event, and motion controller turns off motors (scope turns off nothing,
-as it performs acquisition rather than output, but can be modified so that
-acquisition turns off upon a close event).
+
+basic class setup:
+-each GUI begins with a WidgetGallery class which inherits from QDialog, opens
+the instrument as an object of the corresponding instrument class, starts a
+timer, sets the main layout, and calls one or more functions to create
+additional boxes inside the WidgetGallery.
+-a function that creates a box (usually named 'create_{name}box') will create
+and set the box's layout, and creates any widgets in the box and/or calls
+functions to create additional boxes, and adds those widgets and/or boxes to the
+ box's layout.
+-whenever the timer runs out it will call a check function (usually named
+'check_{name}') which queries the machine and checks if a certain value is
+different from the previously stored value. if so, the widget(s) displaying
+this value are changed.
+-whenever a button is clicked that is meant for toggling (i.e. the parameter has
+ two possible values, i.e. can be represented by a boolean), a function will be
+called (usually named 'toggle_{name}') that queries the machine:
+  if parameter is True:
+    write to machine to set False
+  else: (i.e. parameter is False):
+    write to machine to set True
+-whenever a button is clicked for a parameter that cannot be represented as a
+bool (i.e. can be more than two values: value can be selected from a drop-down
+list or inputted by user), a function is called (usually named
+'on_{name}button_clicked') that accesses the current text of the correct widget
+(current selection if widget is a menu, user input if widget is a text edit) and
+ writes to the machine to set the corresponding parameter to that value.
+-finally, each class contains a closeEvent function which turns off the
+instrument's motors/outputs/etc and closes communication with the instrument
+when a closeEvent is triggered (i.e. the GUI window is closed).
 
 basic GUI design:
 The most basic GUI here is the single PSU, which contains only QLabels,
@@ -55,5 +76,5 @@ the chart.
 -motion controller uses a combination of toggle setups, number setups, QComboBox
  and QLineEdit setups for user input, and individual QPushButtons for motion.
 
- I will include notes on troubleshooting and individual specifications in each
- program. 
+I will include notes on troubleshooting and individual specifications in each
+program.
